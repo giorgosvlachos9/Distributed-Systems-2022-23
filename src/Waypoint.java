@@ -1,6 +1,7 @@
+import java.io.Serializable;
 import java.util.ArrayList;
 
-public class Waypoint {
+public class Waypoint implements Serializable {
     private double latitude;
     private double longitude;
     private double elevation;

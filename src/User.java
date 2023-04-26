@@ -1,6 +1,7 @@
+import java.io.Serializable;
 import java.util.ArrayList;
 
-public class User {
+public class User implements Serializable {
     private String id;
     private ArrayList<ArrayList<Waypoint>> waypoints = new ArrayList<>();
 
@@ -16,4 +17,5 @@ public class User {
     public String getId(){ return this.id; }
 
     public ArrayList<ArrayList<Waypoint>> getWaypoints(){ return this.waypoints; }
+
 }
