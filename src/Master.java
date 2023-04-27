@@ -60,6 +60,32 @@ public class Master{
                     }
                 }
 
+                synchronized(this) {
+                    for (int i = 0; i < clients.size(); i++) {
+                        User new_user = clients.get(i).getUser();
+                        //users.
+
+                        // Logika edw xreiazetai to RoundRobin
+
+                    }
+                }
+
+                /*synchronized(this){
+                    int temp = 0;
+                    for (ActionsForWorkers afw : workers){
+                        afw.setNumber(temp);
+                        temp++;
+                    }
+                }*/
+
+
+                /*synchronized (this) {                           // diamoirasmos twn chuncks sta threads twn workers
+                    for (int i=0; i<clients.size();i++){
+                        users.add(clients.get(i).getUser_thread());
+
+                    }
+                }*/
+
                 /*synchronized(this) {                                // Diamoirasmos twn chunks (??????)
                     for (int i = 0; i < clients.size(); i++) {
                         chuncks = clients.get(i).getChuncks();

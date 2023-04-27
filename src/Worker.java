@@ -5,11 +5,9 @@ import javax.management.RuntimeErrorException;
 
 public class Worker extends Thread{
     private String name;
-    private int port;
 
-    public Worker(String name, int port_no){
+    public Worker(String name){
         this.name = name;
-        this.port = port_no;
     }
 
     public void run(){
@@ -20,17 +18,23 @@ public class Worker extends Thread{
 
         try{
 
-            System.out.println("E");
-            String host = "localhost";
-            /* Create socket for contacting the server on port 4321*/
-            requestSocket = new Socket(host, 4320);
-            out = new ObjectOutputStream(requestSocket.getOutputStream());
-            in = new ObjectInputStream(requestSocket.getInputStream());
+            while(true) {
 
-            System.out.println("F");
+                System.out.println("E");
+                String host = "localhost";
+                /* Create socket for contacting the server on port 4320*/
+                requestSocket = new Socket(host, 4320);
+                out = new ObjectOutputStream(requestSocket.getOutputStream());
+                in = new ObjectInputStream(requestSocket.getInputStream());
 
-            String word =  in.readUTF();
-            System.out.println("Server eipe " + word);
+                System.out.println("F");
+
+                int number = in.read();
+                System.out.println("My number equals to " + number);
+
+                //String word = in.readUTF();
+                //System.out.println("Server eipe " + word);
+            }
 
         } catch (UnknownHostException unknownHost) {
             System.err.println("You are trying to connect to an unknown host!");
@@ -49,11 +53,16 @@ public class Worker extends Thread{
 
 
     public static void main(String args[]){
-        new Worker("Worker1", 81).start();
-        new Worker("Worker2", 82).start();
-        new Worker("Worker3", 83).start();
-        new Worker("Worker4", 84).start();
-        new Worker("Worker5", 85).start();
+        new Worker("Worker1").start();
+        new Worker("Worker2").start();
+        new Worker("Worker3").start();
+        new Worker("Worker4").start();
+        new Worker("Worker5").start();
+        /*int i = 1;
+        while (true){
+            new Worker("Worker"+i).start();
+            i++;
+        }*/
     }
 
 

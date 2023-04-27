@@ -6,17 +6,20 @@ import java.net.*;
 import java.util.*;
 
 public class ActionsForClients extends Thread {
-    ObjectInputStream in;
-    ObjectOutputStream out;
-    final int CHUNCK_SIZE = 3;
-    ArrayList<ArrayList<Waypoint>> chuncks ;
+    private Socket client;
+    private ObjectInputStream in;
+    private ObjectOutputStream out;
+    private final int CHUNCK_SIZE = 3;
+    private HashMap<String, ArrayList<Waypoint>> chuncks ;
+    private User current_user;
     //int[] num = new int[10];
 
     public ActionsForClients(Socket connection) {
         //for (int i =0;i<10;i++) this.num[i] = i;
         try {
-            out = new ObjectOutputStream(connection.getOutputStream());
-            in = new ObjectInputStream(connection.getInputStream());
+            this.client = connection;
+            out = new ObjectOutputStream(client.getOutputStream());
+            in = new ObjectInputStream(client.getInputStream());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -26,7 +29,7 @@ public class ActionsForClients extends Thread {
         try{
 
             String gpx_file = in.readUTF();
-            User current_user = readgpx(gpx_file);
+            current_user = readgpx(gpx_file);
 
             System.out.println("Ola good");
 
@@ -34,13 +37,14 @@ public class ActionsForClients extends Thread {
             //create chunks, map them via workers, once returned reduce on the master
             ArrayList<Waypoint> user_wpts = new ArrayList<>();
             user_wpts = current_user.getWaypoints().get(current_user.getWaypoints().size()-1);      //Gets the last List of waypoints that the user has
-            synchronized(this){
-                System.out.println(user_wpts.size());
-                chuncks = createChuncks(user_wpts, CHUNCK_SIZE);
-                System.out.println("We here4");
-            }
 
-            out.writeUTF("Skase");
+            System.out.println(user_wpts.size());
+            HashMap<String, ArrayList<Waypoint>> chuncks_temp = createChuncks(current_user.getId(), user_wpts, CHUNCK_SIZE);
+            this.setChuncks(chuncks_temp);
+            System.out.println("We here4");
+
+
+            out.writeUTF("Epistrefw arxeio oeo!");
             out.flush();
 
 
@@ -62,31 +66,59 @@ public class ActionsForClients extends Thread {
 
     //public int[] getNum(){ return this.num; }
 
-    private synchronized ArrayList<ArrayList<Waypoint>> createChuncks(ArrayList<Waypoint> wpts, int size)  {
+    // Methods for the chunks
+    public synchronized void setChuncks(HashMap<String, ArrayList<Waypoint>> ch) { this.chuncks = ch; }
+
+    public HashMap<String, ArrayList<Waypoint>> getChuncks(){ return this.chuncks; }
+
+    private synchronized HashMap<String, ArrayList<Waypoint>> createChuncks(String user_name, ArrayList<Waypoint> wpts, int size)  {
 
         System.out.println("Eimaste mesa");
-        ArrayList<ArrayList<Waypoint>> chunks = new ArrayList<>();
+        HashMap<String, ArrayList<Waypoint>> map_results = new HashMap<>();
+        ArrayList<ArrayList<Waypoint>> chunckies = new ArrayList<>();
         int chuncksize = size;
         int helper = 1;                 // counter to input the data for each chunk
         ArrayList<Waypoint> chunck = new ArrayList<>();  //first chunck
         for (int i = 0; i < wpts.size(); i++) {
-            while (helper <= chuncksize) {
+
+            if (helper > chuncksize){
+                helper = 1;
+                chunckies.add(chunck);
+                chunck.clear();
+                continue;
+            }
+            chunck.add(wpts.get(i));
+            helper++;
+
+
+            /*
+            if (helper <= chuncksize) {
                 chunck.add(wpts.get(i));
                 helper++;
+                if (i == wpts.size() && wpts.size() < chuncksize){          // if the size of waypoints is smaller than the chunck
+                    chuncks.add(chunck);
+                    break;
+                }
                 if (helper > chuncksize) {
                     helper = 1;
                     chunks.add(chunck);
-                    chunck = new ArrayList<>();   //Empties out the current chunk
+                    chunck.clear();   //Empties out the current chunk
                 }
-            }
+            }*/
         }
         System.out.println("Ola kala");
 
-        return chunks;
+        for (int i=1; i<=chunckies.size(); i++){
+            String name = user_name + i;
+            map_results.put(name, chunckies.get(i-1));
+        }
+
+        return map_results;
 
     }
 
-    public ArrayList<ArrayList<Waypoint>> getChuncks(){ return this.chuncks; }
+    // Methods for Users
+    public User getUser(){ return this.current_user; }
 
     private User readgpx(String filename) throws IOException{
         ArrayList<Waypoint> waypoints = new ArrayList<>();
