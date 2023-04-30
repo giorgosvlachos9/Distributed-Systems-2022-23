@@ -4,6 +4,7 @@ import java.util.ArrayList;
 public class User implements Serializable {
     private String id;
     private ArrayList<ArrayList<Waypoint>> waypoints = new ArrayList<>();
+    private ArrayList<ArrayList<Result>> results = new ArrayList<>();
 
     public User(String id){
         this.id = id;

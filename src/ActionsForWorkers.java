@@ -10,9 +10,13 @@ public class ActionsForWorkers extends Thread{
     private Socket worker;
     private ObjectInputStream in;
     private ObjectOutputStream out;
-    private HashMap<String, ArrayList<Waypoint>> chuncks_workload;
-    private ArrayList<ArrayList<Waypoint>> workload ;
-    private int number ;
+    private HashMap<String, ArrayList<Waypoint>> workload;
+    //private ArrayList<ArrayList<Waypoint>> workload ;
+    private String worker_id;
+    private final Object lock = new Object();
+
+
+
 
     public ActionsForWorkers(Socket connection) {
         try {
@@ -27,10 +31,12 @@ public class ActionsForWorkers extends Thread{
     public void run(){
         try{
 
+            this.sleep(500);             // Sleeping for seting the worker id
+
             while(true) {
                 //System.out.println("Mpainei gia epe3ergasia");
 
-                out.write(this.number);
+                out.writeUTF("Koko");
                 out.flush();
 
                 //out.writeUTF("Gamw to spiti2");
@@ -42,6 +48,9 @@ public class ActionsForWorkers extends Thread{
             e.printStackTrace();
             //} catch (ClassNotFoundException e) {
             //throw new RuntimeException(e);// need it in readObject
+        }catch(InterruptedException e){
+            System.out.println("System threw InterruptedException!");
+            e.printStackTrace();
         } finally {
             try {
                 in.close();
@@ -52,11 +61,19 @@ public class ActionsForWorkers extends Thread{
         }
     }
 
-    public void setChuncks_workload(HashMap<String, ArrayList<Waypoint>> temp){ this.chuncks_workload = temp; }
+    public void setWorker_id(String worker_id) { this.worker_id = worker_id; }
 
-    public void setNumber(int num){ this.number = num; }
+    public String getWorker_id(){ return this.worker_id; }
 
-    public void addWork(ArrayList<Waypoint> chunck){
-        this.workload.add(chunck);
+    /* Method used to add chunck to the worker's workload
+    * key is the fileId and val is the chunck with the waypoints
+    * */
+    public synchronized void addWorkload(String key , ArrayList<Waypoint> val){ this.workload.put(key, val); }
+
+    public void notifyThread(){
+        synchronized(lock){
+            lock.notify();
+        }
     }
+
 }

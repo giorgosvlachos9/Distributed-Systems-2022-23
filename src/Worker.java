@@ -27,7 +27,7 @@ public class Worker extends Thread{
                 out = new ObjectOutputStream(requestSocket.getOutputStream());
                 in = new ObjectInputStream(requestSocket.getInputStream());
 
-                System.out.println("F");
+                //System.out.println("F");
 
                 int number = in.read();
                 System.out.println("My number equals to " + number);
@@ -48,6 +48,10 @@ public class Worker extends Thread{
                 ioException.printStackTrace();
             }
         }
+
+    }
+
+    public void accumulateStats(){
 
     }
 

@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.io.*;
+import java.time.*;
 
 public class Reader{
 
@@ -11,7 +12,8 @@ public class Reader{
         online=gpx_handler.readLine();
         Waypoint wpt=new Waypoint();
         double latitude=0.0, longitude=0.0, elevation=0.0;
-        String time="", date="", user="";
+        String user="";
+        LocalDateTime date= null;
         while(online!=null){
             if(online.trim().contains("<gpx")){
                 user = online.substring(online.indexOf("creator=")+9, online.indexOf(">")-1);
@@ -27,15 +29,13 @@ public class Reader{
             else if(online.trim().contains("<ele")){
                 elevation=Double.parseDouble(online.substring(online.indexOf(">")+1, online.indexOf("</")));
             }else if(online.trim().contains("<time")){
-                date=online.substring(online.indexOf(">"),online.indexOf("T"));
-                time=online.substring(online.indexOf("T")+1,online.indexOf("Z"));
+                date = LocalDateTime.parse(online.substring(online.indexOf(">")+1, online.indexOf("</")));
             }
             else if(online.trim().contains("</wpt")){
                 wpt.setLatitude(latitude);
                 wpt.setLongitude(longitude);
                 wpt.setDate(date);
                 wpt.setElevation(elevation);
-                wpt.setTime(time);
                 waypoints.add(wpt);
             }
             online =gpx_handler.readLine();
@@ -43,7 +43,7 @@ public class Reader{
 
         User new_user = new User(user);                 //User creation
         new_user.addWaypoints(waypoints);
-        
+
         gpx_handler.close();
         return new_user;
     }
@@ -52,7 +52,7 @@ public class Reader{
     public static void main(String[] args) {
         try{
             Reader r = new Reader();
-            ArrayList<Waypoint> waypoints = new ArrayList<>();
+            //ArrayList<Waypoint> waypoints = new ArrayList<>();
             User u = r.readgpx(args[0]);
             System.out.println(u.getId());
             ArrayList<ArrayList<Waypoint>> wpts = u.getWaypoints();
@@ -69,7 +69,7 @@ public class Reader{
         }catch(IOException e){
             System.out.println("Fuck");
         }
-        
+
 
     }
 }

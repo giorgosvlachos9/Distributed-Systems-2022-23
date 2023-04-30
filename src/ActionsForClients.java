@@ -12,6 +12,10 @@ public class ActionsForClients extends Thread {
     private final int CHUNCK_SIZE = 3;
     private HashMap<String, ArrayList<Waypoint>> chuncks ;
     private User current_user;
+    private String fileId;
+    private Result final_results;
+    private final Object lock = new Object();
+
     //int[] num = new int[10];
 
     public ActionsForClients(Socket connection) {
@@ -28,28 +32,39 @@ public class ActionsForClients extends Thread {
     public void run(){
         try{
 
+            this.sleep(500);        // Sleep in order to set the fileId
+
             String gpx_file = in.readUTF();
-            current_user = readgpx(gpx_file);
+            Reader file_reader = new Reader();
+            current_user = file_reader.readgpx(gpx_file);
 
-            System.out.println("Ola good");
-
+            System.out.println("My name is " + this.fileId);
 
             //create chunks, map them via workers, once returned reduce on the master
             ArrayList<Waypoint> user_wpts = new ArrayList<>();
             user_wpts = current_user.getWaypoints().get(current_user.getWaypoints().size()-1);      //Gets the last List of waypoints that the user has
 
             System.out.println(user_wpts.size());
-            HashMap<String, ArrayList<Waypoint>> chuncks_temp = createChuncks(current_user.getId(), user_wpts, CHUNCK_SIZE);
+            HashMap<String, ArrayList<Waypoint>> chuncks_temp = createChuncks(user_wpts, CHUNCK_SIZE);
             this.setChuncks(chuncks_temp);
             System.out.println("We here4");
 
+            synchronized (lock) {
+                this.wait();                       // We probably need this for the thread to wait for the results
+            }
 
             out.writeUTF("Epistrefw arxeio oeo!");
+            out.flush();
+            out.writeObject(final_results);
             out.flush();
 
 
 
         }catch (IOException e) {
+            System.out.println("System threw IOException!");
+            e.printStackTrace();
+        }catch(InterruptedException e){
+            System.out.println("System threw InterruptedException!");
             e.printStackTrace();
 
         //} catch (ClassNotFoundException e) {
@@ -71,10 +86,10 @@ public class ActionsForClients extends Thread {
 
     public HashMap<String, ArrayList<Waypoint>> getChuncks(){ return this.chuncks; }
 
-    private synchronized HashMap<String, ArrayList<Waypoint>> createChuncks(String user_name, ArrayList<Waypoint> wpts, int size)  {
+    private synchronized HashMap<String, ArrayList<Waypoint>> createChuncks(ArrayList<Waypoint> wpts, int size)  {
 
         System.out.println("Eimaste mesa");
-        HashMap<String, ArrayList<Waypoint>> map_results = new HashMap<>();
+        HashMap<String, ArrayList<Waypoint>> temp = new HashMap<>();
         ArrayList<ArrayList<Waypoint>> chunckies = new ArrayList<>();
         int chuncksize = size;
         int helper = 1;                 // counter to input the data for each chunk
@@ -109,18 +124,33 @@ public class ActionsForClients extends Thread {
         System.out.println("Ola kala");
 
         for (int i=1; i<=chunckies.size(); i++){
-            String name = user_name + i;
-            map_results.put(name, chunckies.get(i-1));
+            String name = this.fileId + "." + i;
+            temp.put(name, chunckies.get(i-1));
         }
 
-        return map_results;
+        return temp;
 
     }
 
     // Methods for Users
     public User getUser(){ return this.current_user; }
 
-    private User readgpx(String filename) throws IOException{
+    public void setFileId(String fileId) { this.fileId = fileId; }
+
+    public String getFileId() { return fileId; }
+
+    public void setFinal_results(Result final_results) { this.final_results = final_results; }
+
+    public Result getFinal_results() { return final_results; }
+
+    public void notifyThread(){
+        synchronized(lock){
+            lock.notify();
+        }
+    }
+
+
+    /*private User readgpx(String filename) throws IOException{
         ArrayList<Waypoint> waypoints = new ArrayList<>();
         FileReader gpx = new FileReader(filename);
         BufferedReader gpx_handler = new BufferedReader(gpx);
@@ -163,5 +193,5 @@ public class ActionsForClients extends Thread {
 
         gpx_handler.close();
         return new_user;
-    }
+    }*/
 }
