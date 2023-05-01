@@ -14,12 +14,13 @@ public class Compute {
     }
 
     public double time_diff(Waypoint w1, Waypoint w2){
-        Duration dur = Duration.between(w2.getDate(), w1.getDate());
-        double hours = (dur.getSeconds()/3600);
+        Duration dur = Duration.between(w1.getDate(), w2.getDate());
+        double hours = (dur.getSeconds());
         return hours;
     }
 
     public double average_speed(Waypoint w1 ,Waypoint w2){
-        return (distance(w1, w2)/time_diff(w1, w2));
+        return (distance(w1, w2) / time_diff(w1, w2));
     }
+
 }

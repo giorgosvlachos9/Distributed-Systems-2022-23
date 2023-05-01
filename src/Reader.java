@@ -13,7 +13,7 @@ public class Reader{
         Waypoint wpt=new Waypoint();
         double latitude=0.0, longitude=0.0, elevation=0.0;
         String user="";
-        LocalDateTime date= null;
+        Instant date= null;
         while(online!=null){
             if(online.trim().contains("<gpx")){
                 user = online.substring(online.indexOf("creator=")+9, online.indexOf(">")-1);
@@ -29,7 +29,7 @@ public class Reader{
             else if(online.trim().contains("<ele")){
                 elevation=Double.parseDouble(online.substring(online.indexOf(">")+1, online.indexOf("</")));
             }else if(online.trim().contains("<time")){
-                date = LocalDateTime.parse(online.substring(online.indexOf(">")+1, online.indexOf("</")));
+                date = Instant.parse(online.substring(online.indexOf(">")+1, online.indexOf("</")));
             }
             else if(online.trim().contains("</wpt")){
                 wpt.setLatitude(latitude);
@@ -73,3 +73,4 @@ public class Reader{
 
     }
 }
+

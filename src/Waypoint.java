@@ -1,10 +1,11 @@
-import java.time.LocalDateTime;
+import java.io.Serializable;
+import java.time.*;
 
-public class Waypoint {
+public class Waypoint implements Serializable{
     private double latitude;
     private double longitude;
     private double elevation;
-    private LocalDateTime date;
+    private Instant date;
 
     public double getLatitude(){
         return latitude;
@@ -15,7 +16,7 @@ public class Waypoint {
     public double getElevation(){
         return elevation;
     }
-    public LocalDateTime getDate(){
+    public Instant getDate(){
         return date;
     }
 
@@ -28,7 +29,7 @@ public class Waypoint {
     public void setElevation(double l){
         elevation=l;
     }
-    public void setDate(LocalDateTime l){
+    public void setDate(Instant l){
         date=l;
     }
 }
@@ -37,3 +38,4 @@ public class Waypoint {
     String id;
     ArrayList<ArrayList<Waypoint>> wpt;
 }*/
+

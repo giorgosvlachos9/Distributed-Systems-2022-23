@@ -11,6 +11,9 @@ public class ActionsForClients extends Thread {
     private ObjectOutputStream out;
     private final int CHUNCK_SIZE = 3;
     private HashMap<String, ArrayList<Waypoint>> chuncks ;
+    private ArrayList<Result> file_res;
+    private HashMap<String, Result> file_results;
+    /* Xreiazetai na dilwsoyme eite HashMap eite ArrayList gia ta results poy tha epistrafoyn apo toys workers, ta opoia meta tha pane ston reduce */
     private User current_user;
     private String fileId;
     private Result final_results;
@@ -32,7 +35,7 @@ public class ActionsForClients extends Thread {
     public void run(){
         try{
 
-            this.sleep(500);        // Sleep in order to set the fileId
+            Thread.sleep(500);        // Sleep in order to set the fileId
 
             String gpx_file = in.readUTF();
             Reader file_reader = new Reader();
@@ -49,9 +52,12 @@ public class ActionsForClients extends Thread {
             this.setChuncks(chuncks_temp);
             System.out.println("We here4");
 
-            synchronized (lock) {
+            /*synchronized (lock) {
                 this.wait();                       // We probably need this for the thread to wait for the results
-            }
+            }*/
+
+            //reduce se stats
+            //steile ta ston client
 
             out.writeUTF("Epistrefw arxeio oeo!");
             out.flush();
@@ -67,8 +73,8 @@ public class ActionsForClients extends Thread {
             System.out.println("System threw InterruptedException!");
             e.printStackTrace();
 
-        //} catch (ClassNotFoundException e) {
-          //  throw new RuntimeException(e);// need it in readObject
+            //} catch (ClassNotFoundException e) {
+            //  throw new RuntimeException(e);// need it in readObject
         } finally {
             try {
                 in.close();
@@ -135,13 +141,33 @@ public class ActionsForClients extends Thread {
     // Methods for Users
     public User getUser(){ return this.current_user; }
 
+    // For fileId
     public void setFileId(String fileId) { this.fileId = fileId; }
 
     public String getFileId() { return fileId; }
 
+    // For file_results
+    public synchronized void setFileResults(HashMap<String, Result> temp) { this.file_results = temp; }
+
+    // For final_results
     public void setFinal_results(Result final_results) { this.final_results = final_results; }
 
     public Result getFinal_results() { return final_results; }
+
+    public void setFile_res(ArrayList<Result> file_res) { this.file_res = file_res; }
+
+    private Result reduce(ArrayList<Result> worker_results) {
+
+        Result final_result = new Result();
+        final_result = worker_results.get(0);
+
+        if(worker_results.size() > 1) {
+            for (int i = 1; i < worker_results.size(); i++) {
+                final_result.addResults(worker_results.get(i));
+            }
+        }
+        return final_result;
+    }
 
     public void notifyThread(){
         synchronized(lock){
@@ -195,3 +221,4 @@ public class ActionsForClients extends Thread {
         return new_user;
     }*/
 }
+

@@ -1,6 +1,9 @@
 import java.io.*;
 import java.net.*;
 
+import java.io.*;
+import java.net.*;
+
 import javax.management.RuntimeErrorException;
 
 public class Client extends Thread{
@@ -33,14 +36,14 @@ public class Client extends Thread{
             out.writeUTF(this.file);
             out.flush();
 
-            String s = in.readUTF();
-            System.out.println("Server eipe " + s);
+            //String s = in.readUTF();
+            //System.out.println("Server eipe " + s);
 
         } catch (UnknownHostException unknownHost) {
             System.err.println("You are trying to connect to an unknown host!");
         } catch (IOException ioException) {
             ioException.printStackTrace();
-        //}catch (ClassNotFoundException e) {
+            //}catch (ClassNotFoundException e) {
             //throw new RuntimeException(e);
         } finally {
             try {
@@ -57,6 +60,8 @@ public class Client extends Thread{
         new Client("C:\\Users\\giorg\\OneDrive - aueb.gr\\Επιφάνεια εργασίας\\gpxs\\route2.gpx").start();
         new Client("C:\\Users\\giorg\\OneDrive - aueb.gr\\Επιφάνεια εργασίας\\gpxs\\route3.gpx").start();
         new Client("C:\\Users\\giorg\\OneDrive - aueb.gr\\Επιφάνεια εργασίας\\gpxs\\route4.gpx").start();
+        //new Client("C:\\Users\\giorg\\OneDrive - aueb.gr\\Επιφάνεια εργασίας\\gpxs\\route5.gpx").start();
+        //new Client("C:\\Users\\giorg\\OneDrive - aueb.gr\\Επιφάνεια εργασίας\\gpxs\\route6.gpx").start();
         //Hello
     }
 

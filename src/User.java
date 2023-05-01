@@ -17,6 +17,9 @@ public class User implements Serializable {
 
     public String getId(){ return this.id; }
 
+    public ArrayList<ArrayList<Result>> getResult(){return results;}
+
     public ArrayList<ArrayList<Waypoint>> getWaypoints(){ return this.waypoints; }
 
 }
+
