@@ -36,6 +36,13 @@ public class Client extends Thread{
             out.writeUTF(this.file);
             out.flush();
 
+            while  (in != null) { }
+                Result my_file_results = (Result) in.readObject();
+                System.out.println("Total Time = " + my_file_results.getTotal_time() + "\nTotal Distance = " + my_file_results.getTotal_distance() +
+                        "\nTotal Ascent = " + my_file_results.getTotal_ascent() + "\nAverage Speed = " + my_file_results.getAvg_speed());
+
+
+
             //String s = in.readUTF();
             //System.out.println("Server eipe " + s);
 
@@ -43,8 +50,8 @@ public class Client extends Thread{
             System.err.println("You are trying to connect to an unknown host!");
         } catch (IOException ioException) {
             ioException.printStackTrace();
-            //}catch (ClassNotFoundException e) {
-            //throw new RuntimeException(e);
+        }catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
         } finally {
             try {
                 in.close(); out.close();
@@ -57,9 +64,9 @@ public class Client extends Thread{
 
     public static void main(String [] args) {
         new Client("C:\\Users\\giorg\\OneDrive - aueb.gr\\Επιφάνεια εργασίας\\gpxs\\route1.gpx").start();
-        new Client("C:\\Users\\giorg\\OneDrive - aueb.gr\\Επιφάνεια εργασίας\\gpxs\\route2.gpx").start();
-        new Client("C:\\Users\\giorg\\OneDrive - aueb.gr\\Επιφάνεια εργασίας\\gpxs\\route3.gpx").start();
-        new Client("C:\\Users\\giorg\\OneDrive - aueb.gr\\Επιφάνεια εργασίας\\gpxs\\route4.gpx").start();
+        //new Client("C:\\Users\\giorg\\OneDrive - aueb.gr\\Επιφάνεια εργασίας\\gpxs\\route2.gpx").start();
+        //new Client("C:\\Users\\giorg\\OneDrive - aueb.gr\\Επιφάνεια εργασίας\\gpxs\\route3.gpx").start();
+        //new Client("C:\\Users\\giorg\\OneDrive - aueb.gr\\Επιφάνεια εργασίας\\gpxs\\route4.gpx").start();
         //new Client("C:\\Users\\giorg\\OneDrive - aueb.gr\\Επιφάνεια εργασίας\\gpxs\\route5.gpx").start();
         //new Client("C:\\Users\\giorg\\OneDrive - aueb.gr\\Επιφάνεια εργασίας\\gpxs\\route6.gpx").start();
         //Hello

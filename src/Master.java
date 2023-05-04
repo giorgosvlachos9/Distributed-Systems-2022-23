@@ -9,9 +9,11 @@ public class Master{
     //Socket that receives the requests
     private static ServerSocket clientserversocket = null;
     private static ServerSocket workerserversocket = null;
+    private static ServerSocket serversocket = null;
     //Socket that is sued to handle the connection
     private static Socket clientsocketprovider;
     private static Socket workersocketprovider;
+    private static Socket socketprovider;
 
     //private static ArrayList<User> users;
     private static ArrayList<ActionsForWorkers> workers = new ArrayList<>();
@@ -34,7 +36,8 @@ public class Master{
         try {
             int NUM_WORKERS = w;
             /* Create Server Socket */
-            clientserversocket = new ServerSocket(4321);
+            serversocket = new ServerSocket(4321);
+            //clientserversocket = new ServerSocket(4321);
             workerserversocket = new ServerSocket(4320);
             worker_counter = 1;
             client_counter = 0;
@@ -42,18 +45,30 @@ public class Master{
 
             while (true) {
                 /* Accept the connection */
-                clientsocketprovider = clientserversocket.accept();
-                workersocketprovider = workerserversocket.accept();
+                socketprovider = serversocket.accept();
+                //workersocketprovider = workerserversocket.accept();
+                //clientsocketprovider = clientserversocket.accept();
+
                 /* Handle the request */
-                ActionsForClients tc = new ActionsForClients(clientsocketprovider);
+                Thread tc = new ActionsForClients(socketprovider);
                 tc.start();
+
+                this.openWorkers(NUM_WORKERS);
+
+                // Mallon thelei synch
+
+
                 /* Giving IDs to the new ClientThreads */
                 synchronized(this){
                     client_counter++;
-                    tc.setFileId("file"+Master.client_counter);
+                    ((ActionsForClients) tc).setFileId("file"+this.client_counter);
+                    //tc.notifyThread();
                 }
-                ActionsForWorkers tw = new ActionsForWorkers(workersocketprovider);
-                tw.start();
+
+                //while(tc.isAlive()) {
+                // runs the thread method
+                //}
+
 
                 //this.worker_counter++;
 
@@ -65,30 +80,30 @@ public class Master{
                 //this.worker_counter = 1;
                 //System.out.println("New client");
 
-                // Mallon thelei synch
-                synchronized(this) {
-                    if (worker_counter <= NUM_WORKERS) {
-                        tw.setWorker_id("worker"+this.worker_counter);
-                        workers.add(tw);
-                        System.out.println("New worker");
-                        worker_counter++;
-                        System.out.println(workers.size());
-                    }
-                }
+
+
+
 
                 // Gia to RoundRobin
                  // Mono gia ton diamoirasmo twn chuncks stoys workers (?)
                  // Uses the rr_counter to assign the workload to the corresponding worker
                  //
-                synchronized(this) {
-                    HashMap<String, ArrayList<Waypoint>> temp_chuncks = tc.getChuncks();
-                    for (Map.Entry<String, ArrayList<Waypoint>> entry : temp_chuncks.entrySet()){
-                        // Add workload to the workers with the corresponding to rr_counter Id
-                        //workers.get(rr_counter-1).notifyThread();
-                        workers.get(rr_counter-1).addWorkload(entry.getKey(), entry.getValue());
-                        this.rr_counter++;
-                        // If we reach the 3rd worker we set the counter back to 1, to got to the first one
-                        if (this.rr_counter > NUM_WORKERS) this.rr_counter = 1;
+                /*synchronized(this) {
+                    while (tc.isAlive()) {
+                        User current_user = tc.getUser();
+                        ArrayList<Waypoint> user_wpts = current_user.getWaypoints().get(current_user.getWaypoints().size() - 1);
+                        HashMap<String, ArrayList<Waypoint>> chuncks_temp = tc.createChuncks(user_wpts, 3);
+
+
+                        //HashMap<String, ArrayList<Waypoint>> temp_chuncks = tc.getChuncks();
+                        for (Map.Entry<String, ArrayList<Waypoint>> entry : chuncks_temp.entrySet()) {
+                            // Add workload to the workers with the corresponding to rr_counter Id
+                            //workers.get(rr_counter-1).notifyThread();
+                            workers.get(rr_counter - 1).addWorkload(entry.getKey(), entry.getValue());
+                            this.rr_counter++;
+                            // If we reach the 3rd worker we set the counter back to 1, to got to the first one
+                            if (this.rr_counter > NUM_WORKERS) this.rr_counter = 1;
+                        }
                     }
                 }
 
@@ -117,11 +132,12 @@ public class Master{
                         file_size = file_size - worker_chuncks;
                         worker_res_together.add(worker_res);
                     }
-
-                    tc.setFile_res(this.orderResults(worker_res_together));
+                    ArrayList<Result> file_res = this.orderResults(worker_res_together);
+                    Result fin_res = tc.reduce(file_res);
+                    tc.setFinal_results(fin_res);
                     // Setaroyme ta dedomena sto ActionsForClients thread
 
-                }
+                }*/
 
 
 
@@ -154,7 +170,29 @@ public class Master{
         return fin_res;
     }
 
+    private synchronized void openWorkers(int num_wor){
 
+        try {
+            while(true){
+                workersocketprovider = workerserversocket.accept();
+                synchronized(this) {
+                    Thread tw = new ActionsForWorkers(workersocketprovider);
+                    tw.start();
+                    if (worker_counter <= num_wor) {
+                        ((ActionsForWorkers) tw).setWorker_id("worker"+this.worker_counter);
+                        workers.add((ActionsForWorkers)tw);
+                        System.out.println("New worker");
+                        worker_counter++;
+                        System.out.println(workers.size());
+                    }
+                }
+                System.out.println("Number of workers = " + this.workers.size());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
 }
 
 

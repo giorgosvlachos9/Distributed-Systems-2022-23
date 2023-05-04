@@ -24,29 +24,34 @@ public class Worker extends Thread{
 
         try{
 
-            while(true) {
+            String host = "localhost";
+            /* Create socket for contacting the server on port 4320*/
 
-                // System.out.println("E");
-                String host = "localhost";
-                /* Create socket for contacting the server on port 4320*/
-                requestSocket = new Socket(host, 4320);
-                out = new ObjectOutputStream(requestSocket.getOutputStream());
-                in = new ObjectInputStream(requestSocket.getInputStream());
+            requestSocket = new Socket(host, 4320);
+            out = new ObjectOutputStream(requestSocket.getOutputStream());
+            in = new ObjectInputStream(requestSocket.getInputStream());
 
-                synchronized(this){
-                    // Here the worker gets the chunk and the key to find the results
-                    key = in.readUTF();
-                    values = (ArrayList<Waypoint>) in.readObject();
+            //while(true) {
+               System.out.println("E");
+                //synchronized (this) {
+                    while (in != null) {
+                        //System.out.println("I dont know what im doing");
+                        //System.out.println("Im awake");
+                        // Here the worker gets the chunk and the key to find the results
+                        key = in.readUTF();
+                        values = (ArrayList<Waypoint>) in.readObject();
 
-                    Result temp = this.accumulateStats(values);                // Finds the intermediate results
-                    out.writeObject(temp);                                                  // Write them to the corresponding socket
-                    out.flush();
-                }
+                        Result temp = this.accumulateStats(values);                // Finds the intermediate results
+                        out.writeObject(temp);                                                  // Write them to the corresponding socket
+                        out.flush();
+                    }
+                //}
+            //}
 
                 //get the waypoint list
                 // steile sto action for workers to intermidiate result
                 //apo action for workers sto master gia reduce
-            }
+
 
         } catch (UnknownHostException unknownHost) {
             System.err.println("You are trying to connect to an unknown host!");

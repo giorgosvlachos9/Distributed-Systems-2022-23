@@ -6,7 +6,6 @@ import java.net.*;
 import java.util.*;
 
 public class ActionsForClients extends Thread {
-    private Socket client;
     private ObjectInputStream in;
     private ObjectOutputStream out;
     private final int CHUNCK_SIZE = 3;
@@ -24,9 +23,9 @@ public class ActionsForClients extends Thread {
     public ActionsForClients(Socket connection) {
         //for (int i =0;i<10;i++) this.num[i] = i;
         try {
-            this.client = connection;
-            out = new ObjectOutputStream(client.getOutputStream());
-            in = new ObjectInputStream(client.getInputStream());
+            //this.client = connection;
+            out = new ObjectOutputStream(connection.getOutputStream());
+            in = new ObjectInputStream(connection.getInputStream());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -35,7 +34,7 @@ public class ActionsForClients extends Thread {
     public void run(){
         try{
 
-            Thread.sleep(500);        // Sleep in order to set the fileId
+            //Thread.sleep(500);        // Sleep in order to set the fileId
 
             String gpx_file = in.readUTF();
             Reader file_reader = new Reader();
@@ -44,25 +43,29 @@ public class ActionsForClients extends Thread {
             System.out.println("My name is " + this.fileId);
 
             //create chunks, map them via workers, once returned reduce on the master
-            ArrayList<Waypoint> user_wpts = new ArrayList<>();
-            user_wpts = current_user.getWaypoints().get(current_user.getWaypoints().size()-1);      //Gets the last List of waypoints that the user has
+            //ArrayList<Waypoint> user_wpts = current_user.getWaypoints().get(current_user.getWaypoints().size()-1);
+            //user_wpts = current_user.getWaypoints().get(current_user.getWaypoints().size()-1);      //Gets the last List of waypoints that the user has
 
-            System.out.println(user_wpts.size());
-            HashMap<String, ArrayList<Waypoint>> chuncks_temp = createChuncks(user_wpts, CHUNCK_SIZE);
-            this.setChuncks(chuncks_temp);
+            //System.out.println(user_wpts.size());
+            //HashMap<String, ArrayList<Waypoint>> chuncks_temp = createChuncks(user_wpts, CHUNCK_SIZE);
+            //this.setChuncks(chuncks_temp);
+            //System.out.println(this.chuncks.size());
             System.out.println("We here4");
 
-            /*synchronized (lock) {
-                this.wait();                       // We probably need this for the thread to wait for the results
-            }*/
+            //this.waitThread();
+            //System.out.println("Thread resumed");
+            Thread.sleep(1000);
+            //while (this.final_results != null){ }
 
-            //reduce se stats
-            //steile ta ston client
 
-            out.writeUTF("Epistrefw arxeio oeo!");
-            out.flush();
-            out.writeObject(final_results);
-            out.flush();
+
+            //final_results = this.reduce(this.file_res);
+            //out.writeObject(final_results);
+            //out.flush();
+
+            System.out.println("Epistrefw arxeio oeo!");
+            //out.writeObject(final_results);
+            //out.flush();
 
 
 
@@ -85,14 +88,23 @@ public class ActionsForClients extends Thread {
         }
     }
 
+    private void waitThread() throws InterruptedException {
+        synchronized(this){
+            this.wait();
+        }
+    }
+
     //public int[] getNum(){ return this.num; }
 
     // Methods for the chunks
     public synchronized void setChuncks(HashMap<String, ArrayList<Waypoint>> ch) { this.chuncks = ch; }
 
-    public HashMap<String, ArrayList<Waypoint>> getChuncks(){ return this.chuncks; }
+    public HashMap<String, ArrayList<Waypoint>> getChuncks(){
+        HashMap<String, ArrayList<Waypoint>> temp_hmap = this.chuncks;
+        return temp_hmap;
+    }
 
-    private synchronized HashMap<String, ArrayList<Waypoint>> createChuncks(ArrayList<Waypoint> wpts, int size)  {
+    public synchronized HashMap<String, ArrayList<Waypoint>> createChuncks(ArrayList<Waypoint> wpts, int size)  {
 
         System.out.println("Eimaste mesa");
         HashMap<String, ArrayList<Waypoint>> temp = new HashMap<>();
@@ -139,7 +151,10 @@ public class ActionsForClients extends Thread {
     }
 
     // Methods for Users
-    public User getUser(){ return this.current_user; }
+    public User getUser(){
+        User u = this.current_user;
+        return u;
+    }
 
     // For fileId
     public void setFileId(String fileId) { this.fileId = fileId; }
@@ -147,16 +162,16 @@ public class ActionsForClients extends Thread {
     public String getFileId() { return fileId; }
 
     // For file_results
-    public synchronized void setFileResults(HashMap<String, Result> temp) { this.file_results = temp; }
+    //public synchronized void setFileResults(HashMap<String, Result> temp) { this.file_results = temp; }
 
     // For final_results
     public void setFinal_results(Result final_results) { this.final_results = final_results; }
 
-    public Result getFinal_results() { return final_results; }
+    //public Result getFinal_results() { return final_results; }
 
-    public void setFile_res(ArrayList<Result> file_res) { this.file_res = file_res; }
+    //public void setFile_res(ArrayList<Result> file_res) { this.file_res = file_res; }
 
-    private Result reduce(ArrayList<Result> worker_results) {
+    public Result reduce(ArrayList<Result> worker_results) {
 
         Result final_result = new Result();
         final_result = worker_results.get(0);
@@ -169,9 +184,9 @@ public class ActionsForClients extends Thread {
         return final_result;
     }
 
-    public void notifyThread(){
-        synchronized(lock){
-            lock.notify();
+    public synchronized void notifyThread(){
+        synchronized(this){
+            this.notify();
         }
     }
 

@@ -19,7 +19,11 @@ public class User implements Serializable {
 
     public ArrayList<ArrayList<Result>> getResult(){return results;}
 
-    public ArrayList<ArrayList<Waypoint>> getWaypoints(){ return this.waypoints; }
+    public ArrayList<ArrayList<Waypoint>> getWaypoints(){
+        ArrayList<ArrayList<Waypoint>> temp_wayp = this.waypoints;
+
+        return temp_wayp;
+    }
 
 }
 
