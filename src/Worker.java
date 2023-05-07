@@ -11,9 +11,10 @@ public class Worker extends Thread{
     private ArrayList<Result> worker_results;
     Compute computer = new Compute();
 
-    public Worker(String name){
+    /*public Worker(String name){
         this.name = name;
-    }
+    }*/
+    public Worker() {}
 
     public void run(){
 
@@ -34,17 +35,23 @@ public class Worker extends Thread{
             //while(true) {
                System.out.println("E");
                 //synchronized (this) {
-                    while (in != null) {
-                        //System.out.println("I dont know what im doing");
-                        //System.out.println("Im awake");
-                        // Here the worker gets the chunk and the key to find the results
-                        key = in.readUTF();
-                        values = (ArrayList<Waypoint>) in.readObject();
+                //key = in.readUTF();
+                values = (ArrayList<Waypoint>) in.readObject();
+                Result temp = this.accumulateStats(values);                // Finds the intermediate results
+                out.writeObject(temp);                                                  // Write them to the corresponding socket
+                out.flush();
 
-                        Result temp = this.accumulateStats(values);                // Finds the intermediate results
-                        out.writeObject(temp);                                                  // Write them to the corresponding socket
-                        out.flush();
-                    }
+                new Worker().start();
+
+            /*if (key.equals("")) {
+                //System.out.println("I dont know what im doing");
+                //System.out.println("Im awake");
+                // Here the worker gets the chunk and the key to find the results
+                key = in.readUTF();
+                values = (ArrayList<Waypoint>) in.readObject();
+
+
+            }*/
                 //}
             //}
 
@@ -70,7 +77,7 @@ public class Worker extends Thread{
 
     }
 
-    public Result accumulateStats(ArrayList<Waypoint> working){
+    public synchronized Result accumulateStats(ArrayList<Waypoint> working){
 
         //call computer to calculate intermidiate result
 
@@ -123,7 +130,12 @@ public class Worker extends Thread{
 
 
     public static void main(String args[]){
-        new Worker("Worker1").start();
+        new Worker().start();
+        new Worker().start();
+        new Worker().start();
+        new Worker().start();
+        new Worker().start();
+        /*new Worker("Worker1").start();
         new Worker("Worker2").start();
         new Worker("Worker3").start();
         new Worker("Worker4").start();

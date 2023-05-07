@@ -13,6 +13,7 @@ public class ActionsForWorkers extends Thread{
     //private ArrayList<ArrayList<Waypoint>> workload ;
     //private ArrayList<Result> temp_res = new ArrayList<>();         // To store each Result object coming from the worker
     private HashMap<String, Result> results;
+    private ArrayList<Waypoint> chunck;
     private Result worker_result;
     private String worker_id;
     private final Object lock = new Object();
@@ -36,67 +37,31 @@ public class ActionsForWorkers extends Thread{
             Thread.sleep(500);             // Sleeping for seting the worker id
 
             System.out.println("Mpainei gia epe3ergasia");
-            while (true) {
-                //for all chunks send based on round robin workload
+            //while (true) {
 
-                String key_temp = "";
-                if (this.workload != null) {
-
-                    /*Iterator<String> iter = this.workload.keySet().iterator();
-
-                    while (iter.hasNext()) {
-                        key_temp = iter.next();
-                        ArrayList<Waypoint> val_temp = this.workload.get(key_temp);
-                        this.workload.remove(key_temp, val_temp);
-                        System.out.println("Sending data to my worker!");
-                        out.writeUTF(key_temp);
-                        out.flush();
-                        out.writeObject(val_temp);
-                        out.flush();
-                        System.out.println("Receiving data from my worker!");
-
-                        worker_result = (Result) in.readObject();
-                        results.put(key_temp, worker_result);
-
-                    }*/
+                synchronized(lock){
+                    lock.wait();
                 }
 
-                    /*for (Map.Entry<String, ArrayList<Waypoint>> entry : this.workload.entrySet()) {
-                        key_temp = entry.getKey();
-                        ArrayList<Waypoint> val_temp = entry.getValue();
-                        // Successfully removes the chunck from the workload
-                        this.workload.remove(key_temp, val_temp);
-                        // Starts sending data to the responding worker
-                        System.out.println("Sending data to my worker!");
-                        //out.writeUTF(key_temp);
-                        //out.flush();
-                        out.writeObject(val_temp);
-                        out.flush();
+                out.writeObject(chunck);
+                out.flush();
 
-                        System.out.println("Receiving data from my worker!");
-                        worker_result = (Result) in.readObject();
-                        results.put(key_temp, worker_result);
-                    }*/
-                //}
-                //out.writeUTF("Koko");
-                //out.flush();
+                worker_result = (Result) in.readObject();
+                synchronized(lock){
+                    lock.wait();
+                }
 
-                //out.writeUTF("Gamw to spiti2");
-                //out.flush();
-                //System.out.println("G");
-                //}
-                //System.out.println("Vgainei");
 
-            }
-        //}catch (IOException e) {
-          //  System.out.println("System threw IOException!");
-           // e.printStackTrace();
+
+            //}
+        }catch (IOException e) {
+            System.out.println("System threw IOException!");
+            e.printStackTrace();
         }catch(InterruptedException e){
             System.out.println("System threw InterruptedException!");
             e.printStackTrace();
-
-        //} catch (ClassNotFoundException e) {
-          //throw new RuntimeException(e);// need it in readObject
+        } catch (ClassNotFoundException e) {
+          throw new RuntimeException(e);// need it in readObject
         } finally {
             try {
                 in.close();
@@ -106,6 +71,24 @@ public class ActionsForWorkers extends Thread{
             }
         }
     }
+
+    public synchronized void setChunck(ArrayList<Waypoint> ch){
+        this.chunck = ch;
+        synchronized(lock){
+            lock.notify();
+        }
+    }
+
+    public synchronized Result getWorker_result() {
+        synchronized(lock){
+            lock.notify();
+        }
+        return this.worker_result;
+    }
+
+
+
+
 
     public void setWorker_id(String worker_id) { this.worker_id = worker_id; }
 

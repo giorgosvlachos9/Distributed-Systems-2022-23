@@ -8,6 +8,7 @@ import javax.management.RuntimeErrorException;
 
 public class Client extends Thread{
     private String file;
+    private Result final_res;
     //private String path = "C:\\Users\\giorg\\OneDrive - aueb.gr\\Desktop\\gpxs";
 
     Client(String file){
@@ -23,23 +24,28 @@ public class Client extends Thread{
 
         try{
 
-            String host = "localhost";
-            /* Create socket for contacting the server on port 4321*/
-            requestSocket = new Socket(host, 4321);
-            System.out.println("A");
 
-            /* Create the streams to send and receive data from server */
-            out = new ObjectOutputStream(requestSocket.getOutputStream());
-            in = new ObjectInputStream(requestSocket.getInputStream());
-            System.out.println("B");
 
-            out.writeUTF(this.file);
-            out.flush();
+                String host = "localhost";
+                /* Create socket for contacting the server on port 4321*/
+                requestSocket = new Socket(host, 4321);
+                System.out.println("A");
 
-            while  (in != null) { }
-                Result my_file_results = (Result) in.readObject();
-                System.out.println("Total Time = " + my_file_results.getTotal_time() + "\nTotal Distance = " + my_file_results.getTotal_distance() +
-                        "\nTotal Ascent = " + my_file_results.getTotal_ascent() + "\nAverage Speed = " + my_file_results.getAvg_speed());
+                /* Create the streams to send and receive data from server */
+                out = new ObjectOutputStream(requestSocket.getOutputStream());
+                in = new ObjectInputStream(requestSocket.getInputStream());
+                System.out.println("B");
+
+                out.writeUTF(this.file);
+                out.flush();
+
+
+
+
+            //while  (in != null) { }
+            //Result my_file_results = (Result) in.readObject();
+            //System.out.println("Total Time = " + my_file_results.getTotal_time() + "\nTotal Distance = " + my_file_results.getTotal_distance() +
+              //      "\nTotal Ascent = " + my_file_results.getTotal_ascent() + "\nAverage Speed = " + my_file_results.getAvg_speed());
 
 
 
@@ -50,8 +56,10 @@ public class Client extends Thread{
             System.err.println("You are trying to connect to an unknown host!");
         } catch (IOException ioException) {
             ioException.printStackTrace();
-        }catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
+        //}catch (ClassNotFoundException e) {
+          //  throw new RuntimeException(e);
+        //} catch (ClassNotFoundException e) {
+          //  e.printStackTrace();
         } finally {
             try {
                 in.close(); out.close();
