@@ -19,7 +19,8 @@ public class Master{
 
     //private static ArrayList<User> users;
     private static ArrayList<Socket> client_connections = new ArrayList<>();
-    private static ArrayList<ActionsForWorkers> workers = new ArrayList<>();
+    //private static ArrayList<ActionsForWorkers> workers = new ArrayList<>();
+    private static ArrayList<Socket> workers = new ArrayList<>();
     //private static ArrayList<ArrayList<Waypoint>> chuncks ;
     static HashMap<String, ArrayList<Waypoint>> user_chuncks = new HashMap<>();
     private static ArrayList<Result> file_results = new ArrayList<>();
@@ -45,57 +46,72 @@ public class Master{
             workerserversocket = new ServerSocket(4320);
             worker_counter = 0;
             client_counter = 0;
-            rr_counter = 1;
+            rr_counter = 0;
 
-            // Connection and initilaization of workers
-            while(true){
+            // Connection and initilization of workers
+            while(workers.size() < NUM_WORKERS ){
+
                 workersocketprovider = workerserversocket.accept();
-                if (this.workers.size() <= NUM_WORKERS ){
-                    Thread tw = new ActionsForWorkers(workersocketprovider);
-                    tw.start();
-                    this.workers.add((ActionsForWorkers) tw);
-                    System.out.println("New worker " + this.workers.size());
+                //ActionsForWorkers tw = new ActionsForWorkers(workersocketprovider);
+                //tw.start();
+
+                if (workers.size() <= NUM_WORKERS ){
+
+                    if (workersocketprovider != null) workers.add(workersocketprovider);
+                    System.out.println("New worker " + workers.size());
                 }
-                if (this.workers.size() == NUM_WORKERS) break;
             }
 
             // Connection with clients;
             while (true) {
+
                 /* Accept the connection */
                 clientsocketprovider = clientserversocket.accept();
                 this.client_connections.add(clientsocketprovider);
-                ActionsForClients tc = new ActionsForClients(clientsocketprovider);
+                Thread tc = new ActionsForClients(clientsocketprovider);
                 tc.start();
-                synchronized(this){
+                synchronized(tc){
                     client_counter++;
-                    tc.setFileId("Client" + client_counter);
+                    ((ActionsForClients) tc).setFileId("Client" + client_counter);
                 }
                 //while(tc.isAlive()){}
-                synchronized(this){
+                synchronized(tc){
                     Reader file_reader = new Reader();
-                    file_name = tc.getGpxFile();
+                    file_name = ((ActionsForClients) tc).getGpxFile();
                     cur_user = file_reader.readgpx(file_name);
                     ArrayList<Waypoint> user_wpts = cur_user.getWaypoints().get(cur_user.getWaypoints().size()-1);
                     user_wpts = cur_user.getWaypoints().get(cur_user.getWaypoints().size()-1);
-                    this.setChuncks(createChuncks(tc.getFileId(), user_wpts, CHUNCK_SIZE));
+                    HashMap<String, ArrayList<Waypoint>> chuncks = createChuncks(((ActionsForClients) tc).getFileId(), user_wpts, CHUNCK_SIZE);
+                    //cur_user.setChuncks(chuncks);
                     System.out.println("Chunks size = " + user_chuncks.size());
                     //System.out.println("Size " + this.user_chuncks);
                 }
-                synchronized(this){
-                    Iterator<String> iterator = user_chuncks.keySet().iterator();
+                synchronized(tc){
+                    HashMap<String, ArrayList<Waypoint>> temp = ;
+                    Iterator<String> iterator = temp.keySet().iterator();
+                    ArrayList<Result> f_results = new ArrayList<>();
 
                     while(iterator.hasNext()){
                         String key = iterator.next();
-                        while(workers.size() == 0) {
-                            System.out.println("Stopped");
-                        }
-                        workers.get(0).setChunck(user_chuncks.get(key));
-                        Result res = workers.get(worker_counter).getWorker_result();
-                        file_results.add(res);
-                        workers.remove(0);
+                        //while(workers.size() == 0) {
+                         //   System.out.println("Stopped");
+                        //}
+
+                        Socket worker = workers.get(rr_counter);
+                        ObjectOutputStream worker_out = new ObjectOutputStream(worker.getOutputStream());
+                        ObjectInputStream worker_in = new ObjectInputStream(worker.getInputStream());
+
+                        worker_out.writeObject(temp.get(key));
+                        worker_out.flush();
+
+                        Result res = (Result) worker_in.readObject();
+                        f_results.add(res);
+                        //rr_counter++;
+                        //if (rr_counter == 3) rr_counter = 0;
+                        //workers.remove(0);
                         //new Worker().start();
                     }
-                    Result final_res = reduce(file_results);
+                    Result final_res = reduce(f_results);
                     printResults(final_res);
 
                 }
@@ -117,6 +133,8 @@ public class Master{
             }
         } catch (IOException ioException) {
             ioException.printStackTrace();
+        } catch (ClassNotFoundException classNotFoundException){
+            classNotFoundException.printStackTrace();
         } finally {
             try {
                 clientsocketprovider.close();
@@ -135,10 +153,33 @@ public class Master{
     private static synchronized HashMap<String, ArrayList<Waypoint>> getMasterChuncks(){ return user_chuncks; }
 
     public static synchronized void setUser_chuncks(HashMap<String, ArrayList<Waypoint>> user_chuncks) {
-        Master.user_chuncks = user_chuncks;
+        user_chuncks = user_chuncks;
     }
 
-    public static synchronized void setChuncks(HashMap<String, ArrayList<Waypoint>> h){ user_chuncks = h; }
+    //public static synchronized void setChuncks(HashMap<String, ArrayList<Waypoint>> h){ user_chuncks = h; }
+
+    /*public static void openWorkerServer(int num_wor){
+        try {
+            while(true){
+
+                workersocketprovider = workerserversocket.accept();
+
+                if (workers.size() <= num_wor ){
+                    ActionsForWorkers tw = new ActionsForWorkers(workersocketprovider);
+                    tw.start();
+                    workers.add(tw);
+                    System.out.println("New worker " + workers.size());
+                }
+                if (workers.size() == num_wor) break;
+            }
+            return ;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }*/
+
+
+
 
     /* Orders results to one ArrayList to send to the client thread */
     private ArrayList<Result> orderResults(ArrayList<ArrayList<Result>> nested_res){

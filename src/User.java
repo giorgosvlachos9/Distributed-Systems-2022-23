@@ -1,9 +1,11 @@
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class User implements Serializable {
     private String id;
     private ArrayList<ArrayList<Waypoint>> waypoints = new ArrayList<>();
+    private HashMap<String, ArrayList<Waypoint>> chuncks = new HashMap<>();
     private ArrayList<ArrayList<Result>> results = new ArrayList<>();
 
     public User(String id){
@@ -24,6 +26,10 @@ public class User implements Serializable {
 
         return temp_wayp;
     }
+
+    public void setChuncks(HashMap<String, ArrayList<Waypoint>> ch){ this.chuncks = ch; }
+
+    public HashMap<String, ArrayList<Waypoint>> getChuncks() { return this.chuncks; }
 
 }
 

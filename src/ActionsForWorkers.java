@@ -34,8 +34,7 @@ public class ActionsForWorkers extends Thread{
     public void run() {
         try {
 
-            Thread.sleep(500);             // Sleeping for seting the worker id
-
+            //Thread.sleep(500);             // Sleeping for seting the worker id
             System.out.println("Mpainei gia epe3ergasia");
             //while (true) {
 
@@ -45,6 +44,7 @@ public class ActionsForWorkers extends Thread{
 
                 out.writeObject(chunck);
                 out.flush();
+                //new Worker().start();
 
                 worker_result = (Result) in.readObject();
                 synchronized(lock){
@@ -83,6 +83,7 @@ public class ActionsForWorkers extends Thread{
         synchronized(lock){
             lock.notify();
         }
+        //new Worker().start();
         return this.worker_result;
     }
 

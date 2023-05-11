@@ -10,6 +10,7 @@ public class Worker extends Thread{
     private ArrayList<Waypoint> values;
     private ArrayList<Result> worker_results;
     Compute computer = new Compute();
+    private Object lock = new Object();
 
     /*public Worker(String name){
         this.name = name;
@@ -24,24 +25,34 @@ public class Worker extends Thread{
 
 
         try{
-
             String host = "localhost";
-            /* Create socket for contacting the server on port 4320*/
+
+
+
+
+
+                /* Create socket for contacting the server on port 4320*/
 
             requestSocket = new Socket(host, 4320);
             out = new ObjectOutputStream(requestSocket.getOutputStream());
             in = new ObjectInputStream(requestSocket.getInputStream());
 
-            //while(true) {
-               System.out.println("E");
+
+            while(true) {
+                System.out.println("E");
+                //while(true) {
                 //synchronized (this) {
                 //key = in.readUTF();
+                //synchronized(lock) {
                 values = (ArrayList<Waypoint>) in.readObject();
                 Result temp = this.accumulateStats(values);                // Finds the intermediate results
                 out.writeObject(temp);                                                  // Write them to the corresponding socket
                 out.flush();
+                //}
+                //}
+            }
 
-                new Worker().start();
+                //new Worker().start();
 
             /*if (key.equals("")) {
                 //System.out.println("I dont know what im doing");
@@ -129,7 +140,9 @@ public class Worker extends Thread{
     }*/
 
 
-    public static void main(String args[]){
+    public static void main(String args[]) throws InterruptedException {
+
+
         new Worker().start();
         new Worker().start();
         new Worker().start();
