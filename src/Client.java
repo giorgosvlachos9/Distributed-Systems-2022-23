@@ -26,40 +26,29 @@ public class Client extends Thread{
 
 
 
-                String host = "localhost";
-                /* Create socket for contacting the server on port 4321*/
-                requestSocket = new Socket(host, 4321);
-                System.out.println("A");
+            String host = "localhost";
+            /* Create socket for contacting the server on port 4320*/
+            requestSocket = new Socket(host, 4320);
+            System.out.println("A");
 
-                /* Create the streams to send and receive data from server */
-                out = new ObjectOutputStream(requestSocket.getOutputStream());
-                in = new ObjectInputStream(requestSocket.getInputStream());
-                System.out.println("B");
+            /* Create the streams to send and receive data from server */
+            out = new ObjectOutputStream(requestSocket.getOutputStream());
+            in = new ObjectInputStream(requestSocket.getInputStream());
+            System.out.println("B");
 
-                out.writeUTF(this.file);
-                out.flush();
+            out.writeUTF("client");
+            out.flush();
 
-
-
-
-            //while  (in != null) { }
-            //Result my_file_results = (Result) in.readObject();
-            //System.out.println("Total Time = " + my_file_results.getTotal_time() + "\nTotal Distance = " + my_file_results.getTotal_distance() +
-              //      "\nTotal Ascent = " + my_file_results.getTotal_ascent() + "\nAverage Speed = " + my_file_results.getAvg_speed());
-
-
-
-            //String s = in.readUTF();
-            //System.out.println("Server eipe " + s);
+            out.writeUTF(this.file);
+            out.flush();
+            //Result res = (Result) in.readObject();
 
         } catch (UnknownHostException unknownHost) {
             System.err.println("You are trying to connect to an unknown host!");
         } catch (IOException ioException) {
             ioException.printStackTrace();
-        //}catch (ClassNotFoundException e) {
-          //  throw new RuntimeException(e);
-        //} catch (ClassNotFoundException e) {
-          //  e.printStackTrace();
+       // } catch (ClassNotFoundException e) {
+           // e.printStackTrace();
         } finally {
             try {
                 in.close(); out.close();

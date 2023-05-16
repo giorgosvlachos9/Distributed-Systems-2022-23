@@ -4,16 +4,18 @@ import java.util.*;
 
 public class Master{
 
-    private static int clientserverport = 4321;
-    private static int workerserverport = 4320;
+    private static int serverport = 4320;
+    private static int workerserverport = 4321;
     private static final int CHUNCK_SIZE = 5;
+    static int NUM_WORKERS;
+    static int client_counter = 1;
+    static int worker_counter = 1;
+    static int rr_counter = 1;
     //Socket that receives the requests
-    private static ServerSocket clientserversocket = null;
-    private static ServerSocket workerserversocket = null;
     private static ServerSocket serversocket = null;
+    private static ServerSocket workerserversocket = null;
     //Socket that is sued to handle the connection
-    private static Socket clientsocketprovider;
-    private static Socket workersocketprovider;
+    private static Socket socketprovider;
     private static User cur_user;
     private static String file_name;
 
@@ -23,13 +25,11 @@ public class Master{
     private static ArrayList<Socket> workers = new ArrayList<>();
     //private static ArrayList<ArrayList<Waypoint>> chuncks ;
     static HashMap<String, ArrayList<Waypoint>> user_chuncks = new HashMap<>();
+    static HashMap<String, Result> user_intermediates = new HashMap<>();
     private static ArrayList<Result> file_results = new ArrayList<>();
-    private static int client_counter;
-    private int worker_counter;
-    private int rr_counter;
 
     private final Object client_lock = new Object();            // Might be an exaggeration
-    private final Object worker_lock = new Object();
+    static Object worker_lock = new Object();
 
 
     public static void main(String args[]) {
@@ -40,105 +40,34 @@ public class Master{
     void openServer(int w) {
 
         try {
-            int NUM_WORKERS = w;
+            this.NUM_WORKERS = w;
             /* Create Server Socket */
-            clientserversocket = new ServerSocket(4321);
-            workerserversocket = new ServerSocket(4320);
-            worker_counter = 0;
-            client_counter = 0;
+            serversocket = new ServerSocket(4320);
             rr_counter = 0;
 
-            // Connection and initilization of workers
-            while(workers.size() < NUM_WORKERS ){
 
-                workersocketprovider = workerserversocket.accept();
-                //ActionsForWorkers tw = new ActionsForWorkers(workersocketprovider);
-                //tw.start();
-
-                if (workers.size() <= NUM_WORKERS ){
-
-                    if (workersocketprovider != null) workers.add(workersocketprovider);
-                    System.out.println("New worker " + workers.size());
-                }
-            }
 
             // Connection with clients;
             while (true) {
 
                 /* Accept the connection */
-                clientsocketprovider = clientserversocket.accept();
-                this.client_connections.add(clientsocketprovider);
-                Thread tc = new ActionsForClients(clientsocketprovider);
-                tc.start();
-                synchronized(tc){
-                    client_counter++;
-                    ((ActionsForClients) tc).setFileId("Client" + client_counter);
-                }
-                //while(tc.isAlive()){}
-                synchronized(tc){
-                    Reader file_reader = new Reader();
-                    file_name = ((ActionsForClients) tc).getGpxFile();
-                    cur_user = file_reader.readgpx(file_name);
-                    ArrayList<Waypoint> user_wpts = cur_user.getWaypoints().get(cur_user.getWaypoints().size()-1);
-                    user_wpts = cur_user.getWaypoints().get(cur_user.getWaypoints().size()-1);
-                    HashMap<String, ArrayList<Waypoint>> chuncks = createChuncks(((ActionsForClients) tc).getFileId(), user_wpts, CHUNCK_SIZE);
-                    //cur_user.setChuncks(chuncks);
-                    System.out.println("Chunks size = " + user_chuncks.size());
-                    //System.out.println("Size " + this.user_chuncks);
-                }
-                synchronized(tc){
-                    HashMap<String, ArrayList<Waypoint>> temp = ;
-                    Iterator<String> iterator = temp.keySet().iterator();
-                    ArrayList<Result> f_results = new ArrayList<>();
+                socketprovider = serversocket.accept();
+                System.out.println("we in");
 
-                    while(iterator.hasNext()){
-                        String key = iterator.next();
-                        //while(workers.size() == 0) {
-                         //   System.out.println("Stopped");
-                        //}
+                RequestHandler req_handler = new RequestHandler(socketprovider);
+                req_handler.start();
 
-                        Socket worker = workers.get(rr_counter);
-                        ObjectOutputStream worker_out = new ObjectOutputStream(worker.getOutputStream());
-                        ObjectInputStream worker_in = new ObjectInputStream(worker.getInputStream());
 
-                        worker_out.writeObject(temp.get(key));
-                        worker_out.flush();
-
-                        Result res = (Result) worker_in.readObject();
-                        f_results.add(res);
-                        //rr_counter++;
-                        //if (rr_counter == 3) rr_counter = 0;
-                        //workers.remove(0);
-                        //new Worker().start();
-                    }
-                    Result final_res = reduce(f_results);
-                    printResults(final_res);
-
-                }
-                /*synchronized (this){
-                    Reader gpx_reader = new Reader();
-                    User cur_user = gpx_reader.readgpx(this.file_name);
-                }*/
-                /*//synchronized(this){
-                    HashMap<String, ArrayList<Waypoint>> chuncks = getMasterChuncks();
-                    if (chuncks != null) {
-                        System.out.println("User's chuncks = " + chuncks.size());
-                    }
-
-                    //System.out.println("Welcome new user");
-                    //System.out.println("User's waypoints = " + cur_user.getWaypoints().size());
-                //}*/
 
 
             }
         } catch (IOException ioException) {
             ioException.printStackTrace();
-        } catch (ClassNotFoundException classNotFoundException){
-            classNotFoundException.printStackTrace();
+        //} catch (ClassNotFoundException classNotFoundException){
+          //  classNotFoundException.printStackTrace();
         } finally {
             try {
-                clientsocketprovider.close();
-                workersocketprovider.close();
+                socketprovider.close();
             } catch (IOException ioException) {
                 ioException.printStackTrace();
             }
@@ -146,17 +75,47 @@ public class Master{
 
     }
 
-    public static synchronized void setFile_name(String file_name) {
-        Master.file_name = file_name;
+    public static synchronized void incrementClientCounter() { client_counter++; }
+
+    public static synchronized void incrementWorkerCounter() { worker_counter++; }
+
+    public static synchronized void incrementRRCounter() { rr_counter++; }
+
+    public static synchronized int getNumWorkers() { return NUM_WORKERS; }
+
+
+
+
+    /* Orders results to one ArrayList to send to the client thread */
+    private ArrayList<Result> orderResults(ArrayList<ArrayList<Result>> nested_res){
+        ArrayList<Result> fin_res = new ArrayList<>();
+        for (int i=0; i<nested_res.size(); i++){
+            for (int j=0; j<nested_res.get(i).size(); j++){
+                fin_res.add(nested_res.get(i).get(j));
+            }
+        }
+
+        return fin_res;
     }
 
-    private static synchronized HashMap<String, ArrayList<Waypoint>> getMasterChuncks(){ return user_chuncks; }
 
-    public static synchronized void setUser_chuncks(HashMap<String, ArrayList<Waypoint>> user_chuncks) {
-        user_chuncks = user_chuncks;
+    public Result reduce(ArrayList<Result> worker_results) {
+
+        Result final_result = new Result();
+        final_result = worker_results.get(0);
+
+        if(worker_results.size() > 1) {
+            for (int i = 1; i < worker_results.size(); i++) {
+                final_result.addResults(worker_results.get(i));
+            }
+        }
+        return final_result;
     }
 
-    //public static synchronized void setChuncks(HashMap<String, ArrayList<Waypoint>> h){ user_chuncks = h; }
+    private synchronized void printResults(Result my_file_results){
+        System.out.println("Total Time = " + my_file_results.getTotal_time() + "\nTotal Distance = " + my_file_results.getTotal_distance() +
+                "\nTotal Ascent = " + my_file_results.getTotal_ascent() + "\nAverage Speed = " + my_file_results.getAvg_speed());
+    }
 
     /*public static void openWorkerServer(int num_wor){
         try {
@@ -176,23 +135,19 @@ public class Master{
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }*/
-
-
-
-
-    /* Orders results to one ArrayList to send to the client thread */
-    private ArrayList<Result> orderResults(ArrayList<ArrayList<Result>> nested_res){
-        ArrayList<Result> fin_res = new ArrayList<>();
-        for (int i=0; i<nested_res.size(); i++){
-            for (int j=0; j<nested_res.get(i).size(); j++){
-                fin_res.add(nested_res.get(i).get(j));
-            }
-        }
-
-        return fin_res;
     }
 
+    public static synchronized void setChuncks(HashMap<String, ArrayList<Waypoint>> h){ user_chuncks = h; }
+
+    private static synchronized HashMap<String, ArrayList<Waypoint>> getMasterChuncks(){ return user_chuncks; }
+
+    public static synchronized void setFile_name(String file_name) {
+        Master.file_name = file_name;
+    }
+
+    public static synchronized void setUser_chuncks(HashMap<String, ArrayList<Waypoint>> user_chuncks) {
+        user_chuncks = user_chuncks;
+    }
 
     public synchronized HashMap<String, ArrayList<Waypoint>> createChuncks(String filename, ArrayList<Waypoint> wpts, int size)  {
 
@@ -227,23 +182,12 @@ public class Master{
 
     }
 
-    public Result reduce(ArrayList<Result> worker_results) {
+    */
 
-        Result final_result = new Result();
-        final_result = worker_results.get(0);
 
-        if(worker_results.size() > 1) {
-            for (int i = 1; i < worker_results.size(); i++) {
-                final_result.addResults(worker_results.get(i));
-            }
-        }
-        return final_result;
-    }
 
-    private synchronized void printResults(Result my_file_results){
-        System.out.println("Total Time = " + my_file_results.getTotal_time() + "\nTotal Distance = " + my_file_results.getTotal_distance() +
-                      "\nTotal Ascent = " + my_file_results.getTotal_ascent() + "\nAverage Speed = " + my_file_results.getAvg_speed());
-    }
+
+
 }
 
 

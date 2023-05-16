@@ -40,9 +40,7 @@ public class ActionsForClients extends Thread {
             this.gpx_file = in.readUTF();
             //this.setGpx_file(gpx);
             System.out.println(gpx_file);
-            synchronized(lock) {
-                lock.wait();
-            }
+
             System.out.println("Im back");
             //Master.setFile_name(gpx_file);
 
@@ -68,9 +66,9 @@ public class ActionsForClients extends Thread {
         }catch (IOException e) {
             System.out.println("System threw IOException!");
             e.printStackTrace();
-        }catch(InterruptedException e){
-            System.out.println("System threw InterruptedException!");
-            e.printStackTrace();
+        //}catch(InterruptedException e){
+          //  System.out.println("System threw InterruptedException!");
+            //e.printStackTrace();
 
             //} catch (ClassNotFoundException e) {
             //  throw new RuntimeException(e);// need it in readObject
