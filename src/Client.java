@@ -9,6 +9,7 @@ import javax.management.RuntimeErrorException;
 public class Client extends Thread{
     private String file;
     private Result final_res;
+    private String username;
     //private String path = "C:\\Users\\giorg\\OneDrive - aueb.gr\\Desktop\\gpxs";
 
     Client(String file){
@@ -38,17 +39,26 @@ public class Client extends Thread{
 
             out.writeUTF("client");
             out.flush();
-
             out.writeUTF(this.file);
             out.flush();
-            //Result res = (Result) in.readObject();
+
+            while(true) {
+
+                username = in.readUTF();
+                Object val = in.readObject();
+                Result res = (Result) val;
+                System.out.println("Username : " + username);
+                res.printEndResults();
+                break;
+
+            }
 
         } catch (UnknownHostException unknownHost) {
             System.err.println("You are trying to connect to an unknown host!");
         } catch (IOException ioException) {
             ioException.printStackTrace();
-       // } catch (ClassNotFoundException e) {
-           // e.printStackTrace();
+       } catch (ClassNotFoundException e) {
+           e.printStackTrace();
         } finally {
             try {
                 in.close(); out.close();
@@ -61,7 +71,7 @@ public class Client extends Thread{
 
     public static void main(String [] args) {
         new Client("C:\\Users\\giorg\\OneDrive - aueb.gr\\Επιφάνεια εργασίας\\gpxs\\route1.gpx").start();
-        //new Client("C:\\Users\\giorg\\OneDrive - aueb.gr\\Επιφάνεια εργασίας\\gpxs\\route2.gpx").start();
+        new Client("C:\\Users\\giorg\\OneDrive - aueb.gr\\Επιφάνεια εργασίας\\gpxs\\route2.gpx").start();
         //new Client("C:\\Users\\giorg\\OneDrive - aueb.gr\\Επιφάνεια εργασίας\\gpxs\\route3.gpx").start();
         //new Client("C:\\Users\\giorg\\OneDrive - aueb.gr\\Επιφάνεια εργασίας\\gpxs\\route4.gpx").start();
         //new Client("C:\\Users\\giorg\\OneDrive - aueb.gr\\Επιφάνεια εργασίας\\gpxs\\route5.gpx").start();

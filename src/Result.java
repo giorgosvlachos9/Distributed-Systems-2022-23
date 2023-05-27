@@ -56,4 +56,9 @@ public class Result implements Serializable{
 
         return r_final;
     }
+
+    public void printEndResults(){
+        System.out.println("Total Time = " + this.getTotal_time() + "\nTotal Distance = " + this.getTotal_distance() +
+                "\nTotal Ascent = " + this.getTotal_ascent() + "\nAverage Speed = " + this.getAvg_speed());
+    }
 }

@@ -8,6 +8,8 @@ public class Worker extends Thread{
     private String name;
     private String key;
     private ArrayList<Waypoint> values;
+    Compute computer = new Compute();
+
 
 
     public Worker() {}
@@ -39,9 +41,17 @@ public class Worker extends Thread{
             while(true) {
                 //synchronized (this) {
                 //key = in.readUTF();
+                //System.out.println(in == null);
+                //System.out.println(in.readUTF());
                 //synchronized(lock) {
-                values = (ArrayList<Waypoint>) in.readObject();
-                //Result temp = this.accumulateStats(values);                // Finds the intermediate results
+                //String word = in.readUTF();
+                Object val = (Object) in.readObject();
+                values = (ArrayList<Waypoint>) val;
+
+                //ActionForWorkers worker_thread = new ActionsForWorkers(
+
+                Result temp = this.accumulateStats(values);                // Finds the intermediate results
+                out.writeObject(temp);
 
             }
             //}
@@ -66,11 +76,12 @@ public class Worker extends Thread{
 
 
 
-    /*public HashMap<String, Result> accumulateStats(String key, ArrayList<Waypoint> working){
+    public synchronized Result accumulateStats(ArrayList<Waypoint> working){
 
         //call computer to calculate intermidiate result
 
-        HashMap<String, Result> results = new HashMap<>();
+        //HashMap<String, Result> results = new HashMap<>();
+        //Compute computer = new Compute();
         Waypoint w1, w2;
         double distance = 0,  up_elevasion = 0,  time_diff = 0, average_speed = 0;
         Result final_result = new Result();
@@ -88,9 +99,8 @@ public class Worker extends Thread{
         final_result.setTotal_time(time_diff);
         final_result.setAvg_speed(average_speed);
 
-        results.put(key, final_result);
-        return results;
-    }*/
+        return final_result;
+    }
 
 
     public static void main(String args[]) throws InterruptedException {

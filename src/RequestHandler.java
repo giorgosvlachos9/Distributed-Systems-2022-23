@@ -7,6 +7,10 @@ public class RequestHandler extends Thread{
     private ObjectOutputStream out;
     private Socket active_connection;
     private int worker_counter = 1;
+    private HashMap<String, ArrayList<Waypoint>> chuncks;
+    private Result final_result;
+    private ArrayList<Result> my_results = new ArrayList<>();
+    private ArrayList<Waypoint> val = new ArrayList<>();
 
     public RequestHandler(Socket connection){
         try {
@@ -25,50 +29,123 @@ public class RequestHandler extends Thread{
                 System.out.println("Mpikame");
                 // To see from whom the request comes from
                 String word = in.readUTF();
+                //  Checks if the requests comes from a client or a worker
                 if (word.equals("client")) {
 
-                    System.out.println("client");
                     String file = in.readUTF();         // Got the file
                     Reader gpx_reader = new Reader();
                     User cur_user = gpx_reader.readgpx(file);
-                    String client = "Client" + Master.client_counter;
-                    Master.incrementClientCounter();
-                    // Creates the chuncks
-                    HashMap<String, ArrayList<Waypoint>> chuncks = this.createChuncks(client, cur_user.getWaypoints().get(0), 6);
-                    System.out.println(client);
-                    System.out.println(chuncks.size() == Master.user_chuncks.size());
-                    System.out.println("Chuncks created");
+                    String client;
+                    synchronized (Master.client_lock) {
+                        client = "Client" + Master.client_counter;
+                        System.out.println(client);
+                        Master.client_counter++;
+                        // Creates the chuncks
+                        this.chuncks = this.createChuncks(client, cur_user.getWaypoints().get(0), 6);
+                        System.out.println(this.chuncks.size());
+                    }
+                    //synchronized(Master.user_chuncks) {
+                    //}
+                    //RequestHandler.wait(1000);
+                    // Starts waiting for results
+                    while(true) {
+
+                        synchronized (Master.user_intermediates) {
+                            //Iterator<Map.Entry<String, Result>> iter = Master.user_intermediates.entrySet().iterator();
+                            //System.out.println("Im in the synch block for User_Intermediates and this is their size = " + Master.user_intermediates.size());
+                            if (Master.user_intermediates.size() < chuncks.size()) continue;
+                            while (Master.user_intermediates.size() != 0) { //&& iter.hasNext()) {
+                                System.out.println("got a result to add to my list");
+                                // Gets the intermediate results
+                                Result res = Master.user_intermediates.get(0);
+                                Master.user_intermediates.remove(res);
+                                this.my_results.add(res);
+                                if (this.my_results.size() == this.chuncks.size()) {
+                                    System.out.println("I ju got my results!");
+                                    System.out.println("This them size = " + this.my_results.size());
+                                    break;
+                                }
+                            }
+                        }
+                        synchronized (Master.users){
+                          //if (cur_user.getId()
+                        }
+                        this.final_result = this.reduce(this.my_results);
+                        out.writeUTF(cur_user.getId());
+                        out.flush();
+                        out.writeObject(this.final_result);
+                        out.flush();
+                        break;
+                    }
+                    synchronized(Master.user_intermediates){
+                        System.out.println("User_intermed size = " + Master.user_intermediates.size());
+                    }
+
+                    //active_connection.close();
+                    //System.out.println(client);
+                    //System.out.println(chuncks.size() == Master.user_chuncks.size());
+                    //System.out.println("Chuncks created");
 
                 } else {
-                    String worker;
+                    String worker, checker;
                     synchronized (Master.worker_lock) {
+                        //if (Master.worker_counter > Master.NUM_WORKERS) active_connection.close();
                         worker = "worker" + Master.worker_counter;
                         Master.incrementWorkerCounter();
                         System.out.println(worker);
+                        //out.writeUTF("HELLO");
+                        //out.flush();
                     }
                     while(true){
-                        synchronized(Master.user_chuncks){
-                            Iterator<Map.Entry<String, ArrayList<Waypoint>>> iterator = Master.user_chuncks.entrySet().iterator();
-                            while(Master.user_chuncks != null){
-                                Map.Entry<String, ArrayList<Waypoint>> entry = iterator.next();
-                                String key = entry.getKey();
-                                ArrayList<Waypoint> val = entry.getValue();
-                                // Round Robin
+
+                        synchronized(Master.user_chuncks) {
+                            //Iterator<Map.Entry<String, ArrayList<Waypoint>>> iterator = Master.user_chuncks.entrySet().iterator();
+                            if (Master.user_chuncks.size() != 0) { //&& iterator.hasNext()){
+                                //Map.Entry<String, ArrayList<Waypoint>> entry = iterator.next();
+                                //String key = entry.getKey();
+                                //ArrayList<Waypoint> val = entry.getValue();
+                                val = Master.user_chuncks.get(0);
+
+                                //Checking for Round Robin
                                 synchronized (Master.worker_lock) {
-                                    if (worker.equals("worker"+Master.rr_counter)){
+                                    checker = "worker"+Master.rr_counter;
+                                    if (worker.equals(checker)) {
+                                        // Increments the counter for round robin
+                                        Master.rr_counter++;
+                                        if (Master.rr_counter > Master.NUM_WORKERS) {
+                                            System.out.println("Reset rr counter");
+                                            Master.rr_counter = 1;
+                                        }
+                                        // Remove chunck
+                                        System.out.println("Removes chunck from chunck list");
+                                        Master.user_chuncks.remove(val);
                                         // write value to worker
+                                        System.out.println("Sending chunck to the worker");
+                                        System.out.println("I am " + worker);
+                                        System.out.println("I am checker" + checker);
                                         out.writeObject(val);
                                         out.flush();
-                                        Master.incrementRRCounter();
-                                        if (Master.rr_counter > Master.NUM_WORKERS) Master.rr_counter = 1;
+
+                                        synchronized (Master.user_intermediates) {
+                                            try {
+                                                System.out.println("Got an intermediate");
+                                                // Returning result from worker
+                                                Object obj = in.readObject();
+                                                Result interm_res = (Result) obj;
+                                                Master.user_intermediates.add(interm_res);
+                                                //Master.user_intermediates.put(key, interm_res);
+                                                System.out.println("Got result back");
+                                                System.out.println("Intermidiates List size = " + Master.user_intermediates.size());
+                                            } catch (ClassNotFoundException classNotFoundException) {
+                                                classNotFoundException.printStackTrace();
+                                            }
+                                        }
                                     }
                                 }
-
                             }
-                        }
-                    }
-                    //System.out.println(worker);
+                        }       // For the synchronization of the user chuncks
 
+                    }       // For the infinite while loop
                 }
 
 
@@ -79,10 +156,13 @@ public class RequestHandler extends Thread{
             //  System.out.println("System threw InterruptedException!");
             //e.printStackTrace();
 
-            //} catch (ClassNotFoundException e) {
-            //  throw new RuntimeException(e);// need it in readObject
+        //} catch (ClassNotFoundException e) {
+            //throw new RuntimeException(e);// need it in readObject
+        //} catch (InterruptedException e) {
+          //  e.printStackTrace();
         } finally {
             try {
+                System.out.println("closing");
                 in.close();
                 out.close();
             } catch (IOException ioException) {
@@ -91,7 +171,7 @@ public class RequestHandler extends Thread{
         }
     }
 
-    public synchronized HashMap<String, ArrayList<Waypoint>> createChuncks(String n, ArrayList<Waypoint> wpts, int size)  {
+    private synchronized HashMap<String, ArrayList<Waypoint>> createChuncks(String n, ArrayList<Waypoint> wpts, int size) {
 
         System.out.println("Eimaste mesa");
         HashMap<String, ArrayList<Waypoint>> temp = new HashMap<>();
@@ -101,8 +181,8 @@ public class RequestHandler extends Thread{
         ArrayList<Waypoint> chunck = new ArrayList<>();  //first chunck
         for (int i = 0; i < wpts.size(); i++) {
             chunck.add(wpts.get(i));
-            if (helper == chuncksize){
-                if (i+1<wpts.size()) {
+            if (helper == chuncksize) {
+                if (i + 1 < wpts.size()) {
                     chunck.add(wpts.get(i + 1));
                     helper = 1;
                     chunckies.add(chunck);
@@ -115,16 +195,32 @@ public class RequestHandler extends Thread{
         }
         System.out.println("Ola kala");
 
-        for (int i=1; i<=chunckies.size(); i++){
-            String name = n + "." + i;
-            synchronized(Master.user_chuncks){
-                Master.user_chuncks.put(name, chunckies.get(i-1));
+        synchronized (Master.user_chuncks) {
+            for (int i = 1; i <= chunckies.size(); i++) {
+                String name = n + "." + i;
+
+                Master.user_chuncks.add(chunckies.get(i - 1));
+
+                temp.put(name, chunckies.get(i - 1));
             }
-            temp.put(name, chunckies.get(i-1));
         }
+
 
         return temp;
 
+    }
+
+    private Result reduce(ArrayList<Result> worker_results) {
+
+        Result final_result = new Result();
+        final_result = worker_results.get(0);
+
+        if(worker_results.size() > 1) {
+            for (int i = 1; i < worker_results.size(); i++) {
+                final_result.addResults(worker_results.get(i));
+            }
+        }
+        return final_result;
     }
 
 }
