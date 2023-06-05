@@ -44,10 +44,7 @@ public class RequestHandler extends Thread{
                         this.chuncks = this.createChuncks(client, cur_user.getWaypoints().get(0), 6);
                         System.out.println(this.chuncks.size());
                     }
-                    //synchronized(Master.user_chuncks) {
-                    //}
-                    //RequestHandler.wait(1000);
-                    // Starts waiting for results
+
                     while(true) {
 
                         synchronized (Master.user_intermediates) {
@@ -67,10 +64,18 @@ public class RequestHandler extends Thread{
                                 }
                             }
                         }
-                        synchronized (Master.users){
-                          //if (cur_user.getId()
-                        }
                         this.final_result = this.reduce(this.my_results);
+                        synchronized (Master.users){
+                            if (Master.users.contains(cur_user)){
+                                Master.users.get(Master.users.indexOf(cur_user)).addResults(final_result);
+                                System.out.println("User has been registered to the server. Adding results its list!");
+                            }else{
+                                cur_user.addResults(this.final_result);
+                                Master.users.add(cur_user);
+                                System.out.println("New user added!");
+                            }
+                            System.out.println("Size of users array = " + Master.users.size());
+                        }
                         out.writeUTF(cur_user.getId());
                         out.flush();
                         out.writeObject(this.final_result);
@@ -81,10 +86,7 @@ public class RequestHandler extends Thread{
                         System.out.println("User_intermed size = " + Master.user_intermediates.size());
                     }
 
-                    //active_connection.close();
-                    //System.out.println(client);
-                    //System.out.println(chuncks.size() == Master.user_chuncks.size());
-                    //System.out.println("Chuncks created");
+
 
                 } else {
                     String worker, checker;
@@ -99,11 +101,8 @@ public class RequestHandler extends Thread{
                     while(true){
 
                         synchronized(Master.user_chuncks) {
-                            //Iterator<Map.Entry<String, ArrayList<Waypoint>>> iterator = Master.user_chuncks.entrySet().iterator();
                             if (Master.user_chuncks.size() != 0) { //&& iterator.hasNext()){
-                                //Map.Entry<String, ArrayList<Waypoint>> entry = iterator.next();
-                                //String key = entry.getKey();
-                                //ArrayList<Waypoint> val = entry.getValue();
+
                                 val = Master.user_chuncks.get(0);
 
                                 //Checking for Round Robin
@@ -152,14 +151,7 @@ public class RequestHandler extends Thread{
         }catch (IOException e) {
             System.out.println("System threw IOException!");
             e.printStackTrace();
-            //}catch(InterruptedException e){
-            //  System.out.println("System threw InterruptedException!");
-            //e.printStackTrace();
 
-        //} catch (ClassNotFoundException e) {
-            //throw new RuntimeException(e);// need it in readObject
-        //} catch (InterruptedException e) {
-          //  e.printStackTrace();
         } finally {
             try {
                 System.out.println("closing");

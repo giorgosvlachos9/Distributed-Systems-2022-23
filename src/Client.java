@@ -1,16 +1,12 @@
 import java.io.*;
 import java.net.*;
 
-import java.io.*;
-import java.net.*;
 
-import javax.management.RuntimeErrorException;
 
 public class Client extends Thread{
     private String file;
     private Result final_res;
     private String username;
-    //private String path = "C:\\Users\\giorg\\OneDrive - aueb.gr\\Desktop\\gpxs";
 
     Client(String file){
         this.file = file;
@@ -69,14 +65,16 @@ public class Client extends Thread{
         }
     }
 
+    private String formatFilePath(String filePath){
+
+        return null;
+    }
+
+
+
     public static void main(String [] args) {
-        new Client("C:\\Users\\giorg\\OneDrive - aueb.gr\\Επιφάνεια εργασίας\\gpxs\\route1.gpx").start();
-        new Client("C:\\Users\\giorg\\OneDrive - aueb.gr\\Επιφάνεια εργασίας\\gpxs\\route2.gpx").start();
-        //new Client("C:\\Users\\giorg\\OneDrive - aueb.gr\\Επιφάνεια εργασίας\\gpxs\\route3.gpx").start();
-        //new Client("C:\\Users\\giorg\\OneDrive - aueb.gr\\Επιφάνεια εργασίας\\gpxs\\route4.gpx").start();
-        //new Client("C:\\Users\\giorg\\OneDrive - aueb.gr\\Επιφάνεια εργασίας\\gpxs\\route5.gpx").start();
-        //new Client("C:\\Users\\giorg\\OneDrive - aueb.gr\\Επιφάνεια εργασίας\\gpxs\\route6.gpx").start();
-        //Hello
+        new Client(args[0]).start();
+
     }
 
 }

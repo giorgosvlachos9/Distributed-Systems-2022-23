@@ -34,8 +34,4 @@ public class Waypoint implements Serializable{
     }
 }
 
-/*class User{
-    String id;
-    ArrayList<ArrayList<Waypoint>> wpt;
-}*/
 

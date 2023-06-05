@@ -48,29 +48,5 @@ public class Reader{
         return new_user;
     }
 
-
-    public static void main(String[] args) {
-        try{
-            Reader r = new Reader();
-            //ArrayList<Waypoint> waypoints = new ArrayList<>();
-            User u = r.readgpx(args[0]);
-            System.out.println(u.getId());
-            ArrayList<ArrayList<Waypoint>> wpts = u.getWaypoints();
-            for (int i=0; i<u.getWaypoints().size(); i++){
-                System.out.println(wpts.get(i));
-            }
-            //System.out.println(u.getWaypoints().isEmpty());
-            /*waypoints=r.readgpx(args[0]);
-            for(Waypoint w : waypoints){
-                System.out.println("We got");
-            }*/
-
-
-        }catch(IOException e){
-            System.out.println("Fuck");
-        }
-
-
-    }
 }
 

@@ -5,7 +5,7 @@ import java.util.HashMap;
 public class User implements Serializable {
     private String id;
     private ArrayList<ArrayList<Waypoint>> waypoints = new ArrayList<>();
-    private ArrayList<Result> results = new ArrayList<>();
+    private ArrayList<Result> final_results = new ArrayList<>();
 
     public User(String id){
         this.id = id;
@@ -13,20 +13,19 @@ public class User implements Serializable {
 
     public void addWaypoints(ArrayList<Waypoint> wpts){
         this.waypoints.add(wpts);
-        //System.out.println("We in this.");
     }
 
     public String getId(){ return this.id; }
-
-    public void setResults(ArrayList<Result> results) { this.results = results; }
-
-    public ArrayList<Result> getResult(){ return results; }
 
     public ArrayList<ArrayList<Waypoint>> getWaypoints(){
         ArrayList<ArrayList<Waypoint>> temp_wayp = this.waypoints;
 
         return temp_wayp;
     }
+
+    public void addResults(Result res) { this.final_results.add(res); }
+
+    public ArrayList<Result> getFinal_results() { return this.final_results; }
 
     // Used to check if a user is already contained in an ArrayList
     @Override

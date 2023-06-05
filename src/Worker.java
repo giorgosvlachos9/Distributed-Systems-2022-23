@@ -2,13 +2,11 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
-import javax.management.RuntimeErrorException;
 
 public class Worker extends Thread{
-    private String name;
-    private String key;
     private ArrayList<Waypoint> values;
     Compute computer = new Compute();
+
 
 
 
@@ -28,7 +26,7 @@ public class Worker extends Thread{
             //--------------------------------------------------------------------------
 
             /* Create socket for contacting the server on port 4320*/
-            String host = "localhost";
+            String host = "192.168.56.1";
             requestSocket = new Socket(host, 4320);
 
             out = new ObjectOutputStream(requestSocket.getOutputStream());
@@ -39,22 +37,16 @@ public class Worker extends Thread{
 
             System.out.println("E");
             while(true) {
-                //synchronized (this) {
-                //key = in.readUTF();
-                //System.out.println(in == null);
-                //System.out.println(in.readUTF());
-                //synchronized(lock) {
-                //String word = in.readUTF();
+
                 Object val = (Object) in.readObject();
                 values = (ArrayList<Waypoint>) val;
 
-                //ActionForWorkers worker_thread = new ActionsForWorkers(
 
                 Result temp = this.accumulateStats(values);                // Finds the intermediate results
                 out.writeObject(temp);
 
             }
-            //}
+
 
 
         } catch (UnknownHostException unknownHost) {
@@ -80,8 +72,7 @@ public class Worker extends Thread{
 
         //call computer to calculate intermidiate result
 
-        //HashMap<String, Result> results = new HashMap<>();
-        //Compute computer = new Compute();
+
         Waypoint w1, w2;
         double distance = 0,  up_elevasion = 0,  time_diff = 0, average_speed = 0;
         Result final_result = new Result();
