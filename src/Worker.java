@@ -8,8 +8,6 @@ public class Worker extends Thread{
     Compute computer = new Compute();
 
 
-
-
     public Worker() {}
 
     public void run(){
@@ -21,9 +19,6 @@ public class Worker extends Thread{
 
         try{
 
-            //--------------------------------------------------------------------------
-            // CHECK IF WE NEED TO CONCLUDE THE requestSocket VARIABLE IN THE WHILE LOOP
-            //--------------------------------------------------------------------------
 
             /* Create socket for contacting the server on port 4320*/
             String host = "192.168.56.1";

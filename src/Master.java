@@ -9,6 +9,7 @@ public class Master{
     static int client_counter = 1;
     static int worker_counter = 1;
     static int rr_counter = 1;
+    static int total_gpx_files = 0;
     //Socket that receives the requests
     private static ServerSocket serversocket = null;
     private static ServerSocket workerserversocket = null;

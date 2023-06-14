@@ -7,6 +7,13 @@ public class Result implements Serializable{
     private double total_ascent;
     private double avg_speed;
 
+    public Result(double t, double d, double a){
+        this.total_time = t;
+        this.total_distance = d;
+        this.total_ascent = a;
+        this.avg_speed = 0.0;
+    }
+
     public Result() {
         this.total_time = 0;
         this.total_distance = 0;
@@ -57,8 +64,9 @@ public class Result implements Serializable{
         return r_final;
     }
 
-    public void printEndResults(){
-        System.out.println("Total Time = " + this.getTotal_time() + "\nTotal Distance = " + this.getTotal_distance() +
-                "\nTotal Ascent = " + this.getTotal_ascent() + "\nAverage Speed = " + this.getAvg_speed());
+    public void printEndResults(boolean isTotals){
+        System.out.print("Total Time = " + this.getTotal_time() + "\nTotal Distance = " + this.getTotal_distance() +
+                "\nTotal Ascent = " + this.getTotal_ascent());
+        if (!isTotals) System.out.println("\nAverage Speed = " + this.getAvg_speed());
     }
 }

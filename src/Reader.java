@@ -6,7 +6,7 @@ public class Reader{
 
     public User readgpx(String filename) throws IOException{
         ArrayList<Waypoint> waypoints = new ArrayList<>();
-        FileReader gpx = new FileReader(filename);
+        StringReader gpx = new StringReader(filename);
         BufferedReader gpx_handler = new BufferedReader(gpx);
         String online;
         online=gpx_handler.readLine();

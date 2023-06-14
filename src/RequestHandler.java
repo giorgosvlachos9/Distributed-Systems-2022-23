@@ -11,6 +11,10 @@ public class RequestHandler extends Thread{
     private Result final_result;
     private ArrayList<Result> my_results = new ArrayList<>();
     private ArrayList<Waypoint> val = new ArrayList<>();
+    private final int CLIENT = 0;
+    private final int WORKER = 1;
+    private final int GET_GPX_FILE_RESULTS = 0;
+    private final int GET_TOTAL_RESULTS = 1;
 
     public RequestHandler(Socket connection){
         try {
@@ -29,27 +33,33 @@ public class RequestHandler extends Thread{
                 System.out.println("Mpikame");
                 // To see from whom the request comes from
                 String word = in.readUTF();
-                //  Checks if the requests comes from a client or a worker
+                // To see what the request wants
+
                 if (word.equals("client")) {
 
-                    String file = in.readUTF();         // Got the file
+
+                    String file = in.readUTF();
                     Reader gpx_reader = new Reader();
                     User cur_user = gpx_reader.readgpx(file);
+                    System.out.println(cur_user.getId());
+
                     String client;
+                    int total_master_files;
                     synchronized (Master.client_lock) {
                         client = "Client" + Master.client_counter;
                         System.out.println(client);
                         Master.client_counter++;
+                        Master.total_gpx_files++;
+                        total_master_files = Master.total_gpx_files;
                         // Creates the chuncks
                         this.chuncks = this.createChuncks(client, cur_user.getWaypoints().get(0), 6);
                         System.out.println(this.chuncks.size());
                     }
 
+
                     while(true) {
 
                         synchronized (Master.user_intermediates) {
-                            //Iterator<Map.Entry<String, Result>> iter = Master.user_intermediates.entrySet().iterator();
-                            //System.out.println("Im in the synch block for User_Intermediates and this is their size = " + Master.user_intermediates.size());
                             if (Master.user_intermediates.size() < chuncks.size()) continue;
                             while (Master.user_intermediates.size() != 0) { //&& iter.hasNext()) {
                                 System.out.println("got a result to add to my list");
@@ -65,43 +75,63 @@ public class RequestHandler extends Thread{
                             }
                         }
                         this.final_result = this.reduce(this.my_results);
+                        String gpx_results, user_total_results, server_total_results;
+                        int total_user_files;
                         synchronized (Master.users){
+                            cur_user.addResults(this.final_result);
                             if (Master.users.contains(cur_user)){
                                 Master.users.get(Master.users.indexOf(cur_user)).addResults(final_result);
+                                // Set the totals from all the files
                                 System.out.println("User has been registered to the server. Adding results its list!");
                             }else{
-                                cur_user.addResults(this.final_result);
                                 Master.users.add(cur_user);
                                 System.out.println("New user added!");
                             }
+                            // Sets the total values for the user
+                            Master.users.get(Master.users.indexOf(cur_user)).setTotals();
+
+                            total_user_files = Master.users.get(Master.users.indexOf(cur_user)).getNumberOfFiles();
+
+                            gpx_results = Master.users.get(Master.users.indexOf(cur_user)).createResultsString(final_result);
+
+                            user_total_results = Master.users.get(Master.users.indexOf(cur_user)).createTotalsString();
+
+                            User temp_user = getServerTotalResults();
+                            server_total_results = temp_user.createTotalsString();
+
                             System.out.println("Size of users array = " + Master.users.size());
                         }
+                        //String username = cur_user.
                         out.writeUTF(cur_user.getId());
                         out.flush();
-                        out.writeObject(this.final_result);
+                        out.writeUTF(gpx_results);
+                        out.flush();
+                        out.writeUTF(user_total_results);
+                        out.flush();
+                        out.writeUTF(server_total_results);
+                        out.flush();
+                        out.writeInt(total_user_files);
+                        out.flush();
+                        out.writeInt(total_master_files);
                         out.flush();
                         break;
                     }
-                    synchronized(Master.user_intermediates){
-                        System.out.println("User_intermed size = " + Master.user_intermediates.size());
-                    }
+
 
 
 
                 } else {
                     String worker, checker;
                     synchronized (Master.worker_lock) {
-                        //if (Master.worker_counter > Master.NUM_WORKERS) active_connection.close();
                         worker = "worker" + Master.worker_counter;
                         Master.incrementWorkerCounter();
                         System.out.println(worker);
-                        //out.writeUTF("HELLO");
-                        //out.flush();
+
                     }
                     while(true){
 
                         synchronized(Master.user_chuncks) {
-                            if (Master.user_chuncks.size() != 0) { //&& iterator.hasNext()){
+                            if (Master.user_chuncks.size() != 0) {
 
                                 val = Master.user_chuncks.get(0);
 
@@ -152,7 +182,8 @@ public class RequestHandler extends Thread{
             System.out.println("System threw IOException!");
             e.printStackTrace();
 
-        } finally {
+
+        } finally{
             try {
                 System.out.println("closing");
                 in.close();
@@ -162,6 +193,7 @@ public class RequestHandler extends Thread{
             }
         }
     }
+
 
     private synchronized HashMap<String, ArrayList<Waypoint>> createChuncks(String n, ArrayList<Waypoint> wpts, int size) {
 
@@ -213,6 +245,21 @@ public class RequestHandler extends Thread{
             }
         }
         return final_result;
+    }
+
+    private synchronized User getServerTotalResults(){
+        User temp_user = new User("temp");
+        double t =0.0, d = 0.0, e = 0.0;
+        synchronized (Master.users){
+            for (User u : Master.users){
+                Result t_r = u.getTotal_res();
+                t += t_r.getTotal_time();
+                d += t_r.getTotal_distance();
+                e += t_r.getTotal_ascent();
+            }
+            temp_user.setTotalResultWithParameters(t, d, e);
+        }
+        return temp_user;
     }
 
 }
