@@ -69,7 +69,7 @@ public class Worker extends Thread{
 
 
         Waypoint w1, w2;
-        double distance = 0,  up_elevasion = 0,  time_diff = 0, average_speed = 0;
+        double distance = 0.0,  up_elevasion = 0.0,  time_diff = 0.0, average_speed = 0.0;
         Result final_result = new Result();
 
         for(int i = 0; i < working.size()-1; i++){

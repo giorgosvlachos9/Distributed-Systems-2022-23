@@ -6,8 +6,14 @@ import java.util.Random;
 public class Client extends Thread{
     private String file;
     private Result final_res;
-    private String username;
+    private String username, user_search="";
+    boolean flag;
     private FileInputStream fileIS;
+
+    Client (String username, boolean flag){
+        user_search = username;
+        flag = flag;
+    }
 
     Client(String f){
 
@@ -36,11 +42,20 @@ public class Client extends Thread{
             in = new ObjectInputStream(requestSocket.getInputStream());
             System.out.println("B");
 
-
             out.writeUTF("client");
             out.flush();
-            out.writeUTF(createFileString(file));
-            out.flush();
+            if (user_search.equals("")) {
+                out.writeUTF("upload");
+                out.flush();
+                out.writeUTF(createFileString(file));
+                out.flush();
+            }else{
+                System.out.println("Im a queryyyyyyyyyyyyyyyyyyyyyyyyyy");
+                out.writeUTF("search");
+                out.flush();
+                out.writeUTF(user_search);
+                out.flush();
+            }
 
 
 
@@ -51,7 +66,9 @@ public class Client extends Thread{
 
             while(true) {
 
-                username = in.readUTF();
+                if (user_search.equals("")){
+                    username = in.readUTF();
+                }
                 String gpx_res = in.readUTF();
                 String user_total_res = in.readUTF();
                 String server_total_res = in.readUTF();
@@ -66,6 +83,7 @@ public class Client extends Thread{
                 System.out.println(server_total_res);
                 System.out.println("total_user_files" + total_user_files);
                 System.out.println("total_gpxs"+total_gpxs);
+                System.out.println("_________________________________________________________________");
 
                 break;
 
@@ -121,7 +139,7 @@ public class Client extends Thread{
 
     public static void main(String [] args) {
         new Client("C:\\Users\\giorg\\OneDrive - aueb.gr\\Έγγραφα\\aueb\\Distributed_Systems\\gpxs\\route1.gpx").start();
-
+        //new Client("user1", true);
     }
 
 }

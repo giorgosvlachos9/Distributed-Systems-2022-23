@@ -6,15 +6,14 @@ public class RequestHandler extends Thread{
     private ObjectInputStream in;
     private ObjectOutputStream out;
     private Socket active_connection;
-    private int worker_counter = 1;
+    private int total_master_files, total_user_files, worker_counter = 1;
     private HashMap<String, ArrayList<Waypoint>> chuncks;
     private Result final_result;
     private ArrayList<Result> my_results = new ArrayList<>();
     private ArrayList<Waypoint> val = new ArrayList<>();
-    private final int CLIENT = 0;
-    private final int WORKER = 1;
-    private final int GET_GPX_FILE_RESULTS = 0;
-    private final int GET_TOTAL_RESULTS = 1;
+    private String gpx_results, user_total_results, server_total_results;
+
+
 
     public RequestHandler(Socket connection){
         try {
@@ -33,90 +32,122 @@ public class RequestHandler extends Thread{
                 System.out.println("Mpikame");
                 // To see from whom the request comes from
                 String word = in.readUTF();
+                String process = in.readUTF();
                 // To see what the request wants
 
                 if (word.equals("client")) {
 
 
-                    String file = in.readUTF();
-                    Reader gpx_reader = new Reader();
-                    User cur_user = gpx_reader.readgpx(file);
-                    System.out.println(cur_user.getId());
+                    if (process.equals("upload")) {
+                        String file = in.readUTF();
+                        Reader gpx_reader = new Reader();
+                        User cur_user = gpx_reader.readgpx(file);
+                        System.out.println(cur_user.getId());
 
-                    String client;
-                    int total_master_files;
-                    synchronized (Master.client_lock) {
-                        client = "Client" + Master.client_counter;
-                        System.out.println(client);
-                        Master.client_counter++;
-                        Master.total_gpx_files++;
-                        total_master_files = Master.total_gpx_files;
-                        // Creates the chuncks
-                        this.chuncks = this.createChuncks(client, cur_user.getWaypoints().get(0), 6);
-                        System.out.println(this.chuncks.size());
-                    }
+                        String client;
+                        synchronized (Master.client_lock) {
+                            client = "Client" + Master.client_counter;
+                            System.out.println(client);
+                            Master.client_counter++;
+                            Master.total_gpx_files++;
+                            total_master_files = Master.total_gpx_files;
+                            // Creates the chuncks
+                            this.chuncks = this.createChuncks(client, cur_user.getWaypoints().get(0), 6);
+                            System.out.println(this.chuncks.size());
+                        }
 
 
-                    while(true) {
+                        while (true) {
 
-                        synchronized (Master.user_intermediates) {
-                            if (Master.user_intermediates.size() < chuncks.size()) continue;
-                            while (Master.user_intermediates.size() != 0) { //&& iter.hasNext()) {
-                                System.out.println("got a result to add to my list");
-                                // Gets the intermediate results
-                                Result res = Master.user_intermediates.get(0);
-                                Master.user_intermediates.remove(res);
-                                this.my_results.add(res);
-                                if (this.my_results.size() == this.chuncks.size()) {
-                                    System.out.println("I ju got my results!");
-                                    System.out.println("This them size = " + this.my_results.size());
-                                    break;
+                            synchronized (Master.user_intermediates) {
+                                if (Master.user_intermediates.size() < chuncks.size()) continue;
+                                while (Master.user_intermediates.size() != 0) { //&& iter.hasNext()) {
+                                    System.out.println("got a result to add to my list");
+                                    // Gets the intermediate results
+                                    Result res = Master.user_intermediates.get(0);
+                                    Master.user_intermediates.remove(res);
+                                    this.my_results.add(res);
+                                    if (this.my_results.size() == this.chuncks.size()) {
+                                        System.out.println("I ju got my results!");
+                                        System.out.println("This them size = " + this.my_results.size());
+                                        break;
+                                    }
                                 }
                             }
-                        }
-                        this.final_result = this.reduce(this.my_results);
-                        String gpx_results, user_total_results, server_total_results;
-                        int total_user_files;
-                        synchronized (Master.users){
-                            cur_user.addResults(this.final_result);
-                            if (Master.users.contains(cur_user)){
-                                Master.users.get(Master.users.indexOf(cur_user)).addResults(final_result);
-                                // Set the totals from all the files
-                                System.out.println("User has been registered to the server. Adding results its list!");
-                            }else{
-                                Master.users.add(cur_user);
-                                System.out.println("New user added!");
+                            this.final_result = this.reduce(this.my_results);
+
+                            synchronized (Master.users) {
+                                cur_user.addResults(this.final_result);
+                                if (Master.users.contains(cur_user)) {
+                                    Master.users.get(Master.users.indexOf(cur_user)).addResults(final_result);
+                                    // Set the totals from all the files
+                                    System.out.println("User has been registered to the server. Adding results its list!");
+                                } else {
+                                    Master.users.add(cur_user);
+                                    System.out.println("New user added!");
+                                }
+                                // Sets the total values for the user
+                                Master.users.get(Master.users.indexOf(cur_user)).setTotals();
+
+                                total_user_files = Master.users.get(Master.users.indexOf(cur_user)).getNumberOfFiles();
+
+                                gpx_results = Master.users.get(Master.users.indexOf(cur_user)).createResultsString(final_result);
+
+                                user_total_results = Master.users.get(Master.users.indexOf(cur_user)).createTotalsString();
+
+                                User temp_user = getServerTotalResults();
+                                server_total_results = temp_user.createTotalsString();
+
+                                System.out.println("Size of users array = " + Master.users.size());
                             }
-                            // Sets the total values for the user
-                            Master.users.get(Master.users.indexOf(cur_user)).setTotals();
+                            //String username = cur_user.
 
-                            total_user_files = Master.users.get(Master.users.indexOf(cur_user)).getNumberOfFiles();
 
-                            gpx_results = Master.users.get(Master.users.indexOf(cur_user)).createResultsString(final_result);
-
-                            user_total_results = Master.users.get(Master.users.indexOf(cur_user)).createTotalsString();
-
-                            User temp_user = getServerTotalResults();
-                            server_total_results = temp_user.createTotalsString();
-
-                            System.out.println("Size of users array = " + Master.users.size());
+                            break;
                         }
-                        //String username = cur_user.
-                        out.writeUTF(cur_user.getId());
-                        out.flush();
-                        out.writeUTF(gpx_results);
-                        out.flush();
-                        out.writeUTF(user_total_results);
-                        out.flush();
-                        out.writeUTF(server_total_results);
-                        out.flush();
-                        out.writeInt(total_user_files);
-                        out.flush();
-                        out.writeInt(total_master_files);
-                        out.flush();
-                        break;
                     }
+                    else{
 
+                        String search_name = in.readUTF();
+                        User cur_user = new User(search_name);
+
+                        while (true) {
+
+                            synchronized (Master.users) {
+                                while (Master.users.size() == 0) { }
+                                total_master_files = Master.total_gpx_files;
+                                synchronized (Master.client_lock){
+
+                                }
+
+                                if (Master.users.contains(cur_user)) {
+                                    total_user_files = Master.users.get(Master.users.indexOf(cur_user)).getNumberOfFiles();
+
+                                    gpx_results = Master.users.get(Master.users.indexOf(cur_user)).createResultsString(final_result);
+
+                                    user_total_results = Master.users.get(Master.users.indexOf(cur_user)).createTotalsString();
+
+                                    User temp_user = getServerTotalResults();
+                                    server_total_results = temp_user.createTotalsString();
+                                }
+                            }
+                            break;
+                        }
+
+
+                    }
+                    /*out.writeUTF(cur_user.getId());
+                    out.flush();
+                    out.writeUTF(gpx_results);
+                    out.flush();
+                    out.writeUTF(user_total_results);
+                    out.flush();
+                    out.writeUTF(server_total_results);
+                    out.flush();
+                    out.writeInt(total_user_files);
+                    out.flush();
+                    out.writeInt(total_master_files);
+                    out.flush();*/
 
 
 
@@ -130,10 +161,11 @@ public class RequestHandler extends Thread{
                     }
                     while(true){
 
+
                         synchronized(Master.user_chuncks) {
                             if (Master.user_chuncks.size() != 0) {
 
-                                val = Master.user_chuncks.get(0);
+                                //val = Master.user_chuncks.get(0);
 
                                 //Checking for Round Robin
                                 synchronized (Master.worker_lock) {
@@ -146,13 +178,15 @@ public class RequestHandler extends Thread{
                                             Master.rr_counter = 1;
                                         }
                                         // Remove chunck
-                                        System.out.println("Removes chunck from chunck list");
-                                        Master.user_chuncks.remove(val);
+                                        System.out.println("Removes chunck from chunck list and prints chuncks list size ");
+                                        System.out.println(Master.user_chuncks.size());
+                                        ArrayList<Waypoint> ch = Master.user_chuncks.remove(0);
+                                        System.out.println("User chuncks size after remove : " + Master.user_chuncks.size());
                                         // write value to worker
                                         System.out.println("Sending chunck to the worker");
                                         System.out.println("I am " + worker);
                                         System.out.println("I am checker" + checker);
-                                        out.writeObject(val);
+                                        out.writeObject(ch);
                                         out.flush();
 
                                         synchronized (Master.user_intermediates) {
@@ -163,6 +197,8 @@ public class RequestHandler extends Thread{
                                                 Result interm_res = (Result) obj;
                                                 Master.user_intermediates.add(interm_res);
                                                 //Master.user_intermediates.put(key, interm_res);
+                                                System.out.println(worker);
+                                                interm_res.printEndResults(true);
                                                 System.out.println("Got result back");
                                                 System.out.println("Intermidiates List size = " + Master.user_intermediates.size());
                                             } catch (ClassNotFoundException classNotFoundException) {
@@ -209,7 +245,8 @@ public class RequestHandler extends Thread{
                 if (i + 1 < wpts.size()) {
                     chunck.add(wpts.get(i + 1));
                     helper = 1;
-                    chunckies.add(chunck);
+                    ArrayList<Waypoint> temp_chunck = new ArrayList<>(chunck);
+                    chunckies.add(temp_chunck);
                     chunck.clear();
                     continue;
                 }
