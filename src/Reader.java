@@ -28,6 +28,7 @@ public class Reader{
             }
             else if(online.trim().contains("<ele")){
                 elevation=Double.parseDouble(online.substring(online.indexOf(">")+1, online.indexOf("</")));
+                System.out.println(elevation);
             }else if(online.trim().contains("<time")){
                 date = Instant.parse(online.substring(online.indexOf(">")+1, online.indexOf("</")));
             }

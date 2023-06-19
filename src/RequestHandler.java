@@ -6,12 +6,11 @@ public class RequestHandler extends Thread{
     private ObjectInputStream in;
     private ObjectOutputStream out;
     private Socket active_connection;
-    private int total_master_files, total_user_files, worker_counter = 1;
+    private int worker_counter = 1;
     private HashMap<String, ArrayList<Waypoint>> chuncks;
     private Result final_result;
     private ArrayList<Result> my_results = new ArrayList<>();
     private ArrayList<Waypoint> val = new ArrayList<>();
-    private String gpx_results, user_total_results, server_total_results;
 
 
 
@@ -32,19 +31,19 @@ public class RequestHandler extends Thread{
                 System.out.println("Mpikame");
                 // To see from whom the request comes from
                 String word = in.readUTF();
-                String process = in.readUTF();
                 // To see what the request wants
 
                 if (word.equals("client")) {
 
 
-                    if (process.equals("upload")) {
+                    //if (process.equals("upload")) {
                         String file = in.readUTF();
                         Reader gpx_reader = new Reader();
                         User cur_user = gpx_reader.readgpx(file);
                         System.out.println(cur_user.getId());
 
                         String client;
+                        int total_master_files;
                         synchronized (Master.client_lock) {
                             client = "Client" + Master.client_counter;
                             System.out.println(client);
@@ -65,6 +64,9 @@ public class RequestHandler extends Thread{
                                     System.out.println("got a result to add to my list");
                                     // Gets the intermediate results
                                     Result res = Master.user_intermediates.get(0);
+                                    System.out.println("Removing from user_intermed to add to the client' list and print user interm size " + Master.user_intermediates.size());
+                                    res.printEndResults(false);
+                                    System.out.println("-----------------------------------------------------");
                                     Master.user_intermediates.remove(res);
                                     this.my_results.add(res);
                                     if (this.my_results.size() == this.chuncks.size()) {
@@ -76,6 +78,8 @@ public class RequestHandler extends Thread{
                             }
                             this.final_result = this.reduce(this.my_results);
 
+                            String gpx_results, user_total_results, server_total_results;
+                            int total_user_files;
                             synchronized (Master.users) {
                                 cur_user.addResults(this.final_result);
                                 if (Master.users.contains(cur_user)) {
@@ -102,11 +106,22 @@ public class RequestHandler extends Thread{
                             }
                             //String username = cur_user.
 
-
+                            out.writeUTF(cur_user.getId());
+                            out.flush();
+                            out.writeUTF(gpx_results);
+                            out.flush();
+                            out.writeUTF(user_total_results);
+                            out.flush();
+                            out.writeUTF(server_total_results);
+                            out.flush();
+                            out.writeInt(total_user_files);
+                            out.flush();
+                            out.writeInt(total_master_files);
+                            out.flush();
                             break;
                         }
-                    }
-                    else{
+                    //}
+                    /*else{
 
                         String search_name = in.readUTF();
                         User cur_user = new User(search_name);
@@ -135,19 +150,8 @@ public class RequestHandler extends Thread{
                         }
 
 
-                    }
-                    /*out.writeUTF(cur_user.getId());
-                    out.flush();
-                    out.writeUTF(gpx_results);
-                    out.flush();
-                    out.writeUTF(user_total_results);
-                    out.flush();
-                    out.writeUTF(server_total_results);
-                    out.flush();
-                    out.writeInt(total_user_files);
-                    out.flush();
-                    out.writeInt(total_master_files);
-                    out.flush();*/
+                    }*/
+
 
 
 
@@ -199,7 +203,7 @@ public class RequestHandler extends Thread{
                                                 //Master.user_intermediates.put(key, interm_res);
                                                 System.out.println(worker);
                                                 interm_res.printEndResults(true);
-                                                System.out.println("Got result back");
+                                                System.out.println("\nGot result back");
                                                 System.out.println("Intermidiates List size = " + Master.user_intermediates.size());
                                             } catch (ClassNotFoundException classNotFoundException) {
                                                 classNotFoundException.printStackTrace();
@@ -273,20 +277,29 @@ public class RequestHandler extends Thread{
 
     private Result reduce(ArrayList<Result> worker_results) {
 
-        Result final_result = new Result();
-        final_result = worker_results.get(0);
+        double dist = 0.0, up_ele = 0.0;
+        double time = 0;
 
-        if(worker_results.size() > 1) {
-            for (int i = 1; i < worker_results.size(); i++) {
-                final_result.addResults(worker_results.get(i));
-            }
+        for (int i = 0; i < worker_results.size(); i++){
+            dist += worker_results.get(i).getTotal_distance();
+            up_ele += worker_results.get(i).getTotal_ascent();
+            time += worker_results.get(i).getTotal_time();
         }
+        double avg_speed = dist / time;
+
+        Result final_result = new Result();
+        final_result.setTotal_time(time/60);
+        final_result.setTotal_distance(dist);
+        final_result.setTotal_ascent(up_ele);
+        final_result.setAvg_speed(avg_speed);
+
         return final_result;
+
     }
 
     private synchronized User getServerTotalResults(){
         User temp_user = new User("temp");
-        double t =0.0, d = 0.0, e = 0.0;
+        double t = 0.0, d = 0.0, e = 0.0;
         synchronized (Master.users){
             for (User u : Master.users){
                 Result t_r = u.getTotal_res();

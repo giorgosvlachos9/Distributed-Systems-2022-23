@@ -6,14 +6,10 @@ import java.util.Random;
 public class Client extends Thread{
     private String file;
     private Result final_res;
-    private String username, user_search="";
+    private String username;
     boolean flag;
     private FileInputStream fileIS;
 
-    Client (String username, boolean flag){
-        user_search = username;
-        flag = flag;
-    }
 
     Client(String f){
 
@@ -44,31 +40,16 @@ public class Client extends Thread{
 
             out.writeUTF("client");
             out.flush();
-            if (user_search.equals("")) {
-                out.writeUTF("upload");
-                out.flush();
-                out.writeUTF(createFileString(file));
-                out.flush();
-            }else{
-                System.out.println("Im a queryyyyyyyyyyyyyyyyyyyyyyyyyy");
-                out.writeUTF("search");
-                out.flush();
-                out.writeUTF(user_search);
-                out.flush();
-            }
-
-
-
-            /*out.writeUTF("client");
+            //out.writeUTF("upload");
+            //out.flush();
+            out.writeUTF(createFileString(file));
             out.flush();
-            out.writeObject(this.fileIS);
-            out.flush();*/
+
 
             while(true) {
 
-                if (user_search.equals("")){
-                    username = in.readUTF();
-                }
+
+                username = in.readUTF();
                 String gpx_res = in.readUTF();
                 String user_total_res = in.readUTF();
                 String server_total_res = in.readUTF();
