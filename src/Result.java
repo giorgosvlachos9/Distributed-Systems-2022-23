@@ -53,17 +53,6 @@ public class Result implements Serializable{
         this.avg_speed = avg_speed;
     }
 
-    public Result addResults(Result r2) {
-        Result r_final = new Result();
-
-        r_final.setTotal_time(this.getTotal_time() + r2.getTotal_time());
-        r_final.setTotal_distance(this.getTotal_distance() + r2.getTotal_distance());
-        r_final.setTotal_ascent(this.getTotal_ascent() + r2.getTotal_ascent());
-        r_final.setAvg_speed(this.getAvg_speed() + r2.getAvg_speed());
-
-        return r_final;
-    }
-
     public void printEndResults(boolean isTotals){
         System.out.print("Total Time = " + this.getTotal_time() + "\nTotal Distance = " + this.getTotal_distance() +
                 "\nTotal Ascent = " + this.getTotal_ascent());

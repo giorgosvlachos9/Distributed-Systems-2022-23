@@ -5,11 +5,8 @@ import java.util.Random;
 
 public class Client extends Thread{
     private String file;
-    private Result final_res;
     private String username;
-    boolean flag;
-    private FileInputStream fileIS;
-
+    private String CLIENT = "client";
 
     Client(String f){
 
@@ -31,44 +28,33 @@ public class Client extends Thread{
             String host = "localhost";
             /* Create socket for contacting the server on port 4320*/
             requestSocket = new Socket(host, 4320);
-            System.out.println("A");
 
             /* Create the streams to send and receive data from server */
             out = new ObjectOutputStream(requestSocket.getOutputStream());
             in = new ObjectInputStream(requestSocket.getInputStream());
-            System.out.println("B");
 
-            out.writeUTF("client");
+            out.writeUTF(CLIENT);
             out.flush();
-            //out.writeUTF("upload");
-            //out.flush();
+
             out.writeUTF(createFileString(file));
             out.flush();
 
+            username = in.readUTF();
+            String gpx_res = in.readUTF();
+            String user_total_res = in.readUTF();
+            String server_total_res = in.readUTF();
+            int total_user_files = in.readInt();
+            int total_gpxs = in.readInt();
+            System.out.println("Username : " + username);
 
-            while(true) {
-
-
-                username = in.readUTF();
-                String gpx_res = in.readUTF();
-                String user_total_res = in.readUTF();
-                String server_total_res = in.readUTF();
-                int total_user_files = in.readInt();
-                int total_gpxs = in.readInt();
-                System.out.println("Username : " + username);
-
-                System.out.println(gpx_res);
-                System.out.println("--------------------------------");
-                System.out.println(user_total_res);
-                System.out.println("--------------------------------");
-                System.out.println(server_total_res);
-                System.out.println("total_user_files" + total_user_files);
-                System.out.println("total_gpxs"+total_gpxs);
-                System.out.println("_________________________________________________________________");
-
-                break;
-
-            }
+            System.out.println(gpx_res);
+            System.out.println("--------------------------------");
+            System.out.println(user_total_res);
+            System.out.println("--------------------------------");
+            System.out.println(server_total_res);
+            System.out.println("total_user_files " + total_user_files);
+            System.out.println("total_gpxs "+total_gpxs);
+            System.out.println("_________________________________________________________________");
 
 
         } catch (UnknownHostException unknownHost) {
@@ -119,7 +105,7 @@ public class Client extends Thread{
 
 
     public static void main(String [] args) {
-        new Client("C:\\Users\\giorg\\OneDrive - aueb.gr\\Έγγραφα\\aueb\\Distributed_Systems\\gpxs\\route1.gpx").start();
+        new Client("C:\\Users\\giorg\\OneDrive - aueb.gr\\Έγγραφα\\aueb\\Distributed_Systems\\gpxs\\route2.gpx").start();
         //new Client("user1", true);
     }
 

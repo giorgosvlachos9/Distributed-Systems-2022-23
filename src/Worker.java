@@ -4,11 +4,16 @@ import java.util.*;
 
 
 public class Worker extends Thread{
+    private String server_ip;
+    private int server_port;
     private ArrayList<Waypoint> values;
     Compute computer = new Compute();
 
 
-    public Worker() {}
+    public Worker(String ip, int port) {
+        this.server_ip = ip;
+        this.server_port = port;
+    }
 
     public void run(){
 
@@ -30,7 +35,6 @@ public class Worker extends Thread{
             out.writeUTF("worker");
             out.flush();
 
-            System.out.println("E");
             while(true) {
 
                 Object val = (Object) in.readObject();
@@ -71,7 +75,7 @@ public class Worker extends Thread{
         Waypoint w1, w2;
         double distance = 0.0,  up_elevasion = 0.0, average_speed = 0.0;
         double time_diff = 0;
-        Result final_result = new Result();
+
 
         for(int i = 1; i < working.size(); i++){
             w1 = working.get(i-1);
@@ -81,12 +85,7 @@ public class Worker extends Thread{
             time_diff += computer.time_diff(w1, w2);
         }
 
-        average_speed = distance / time_diff;
-
-        final_result.setTotal_ascent(up_elevasion);
-        final_result.setTotal_distance(distance);
-        final_result.setTotal_time(time_diff);
-        final_result.setAvg_speed(average_speed);
+        Result final_result = new Result(time_diff, distance, up_elevasion);
 
         return final_result;
 
@@ -94,11 +93,11 @@ public class Worker extends Thread{
 
 
     public static void main(String args[]) throws InterruptedException {
-        new Worker().start();
-        new Worker().start();
-        new Worker().start();
-        new Worker().start();
-        new Worker().start();
+        new Worker(args[0], Integer.parseInt(args[1])).start();
+        new Worker(args[0], Integer.parseInt(args[1])).start();
+        new Worker(args[0], Integer.parseInt(args[1])).start();
+        new Worker(args[0], Integer.parseInt(args[1])).start();
+        new Worker(args[0], Integer.parseInt(args[1])).start();
     }
 
 

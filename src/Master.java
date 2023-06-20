@@ -43,8 +43,8 @@ public class Master{
 
                 /* Accept the connection */
                 socketprovider = serversocket.accept();
-                System.out.println("we in");
 
+                // Creates handler thread tp handle the request
                 RequestHandler req_handler = new RequestHandler(socketprovider);
                 req_handler.start();
 
