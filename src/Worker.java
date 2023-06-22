@@ -4,13 +4,16 @@ import java.util.*;
 
 
 public class Worker extends Thread{
+    private String server_ip;
+    private int server_port;
     private ArrayList<Waypoint> values;
     Compute computer = new Compute();
 
 
-
-
-    public Worker() {}
+    public Worker(String ip, int port) {
+        this.server_ip = ip;
+        this.server_port = port;
+    }
 
     public void run(){
 
@@ -21,13 +24,9 @@ public class Worker extends Thread{
 
         try{
 
-            //--------------------------------------------------------------------------
-            // CHECK IF WE NEED TO CONCLUDE THE requestSocket VARIABLE IN THE WHILE LOOP
-            //--------------------------------------------------------------------------
 
             /* Create socket for contacting the server on port 4320*/
-            String host = "192.168.56.1";
-            requestSocket = new Socket(host, 4320);
+            requestSocket = new Socket(server_ip, server_port);
 
             out = new ObjectOutputStream(requestSocket.getOutputStream());
             in = new ObjectInputStream(requestSocket.getInputStream());
@@ -35,7 +34,6 @@ public class Worker extends Thread{
             out.writeUTF("worker");
             out.flush();
 
-            System.out.println("E");
             while(true) {
 
                 Object val = (Object) in.readObject();
@@ -44,6 +42,7 @@ public class Worker extends Thread{
 
                 Result temp = this.accumulateStats(values);                // Finds the intermediate results
                 out.writeObject(temp);
+                out.flush();
 
             }
 
@@ -72,34 +71,32 @@ public class Worker extends Thread{
 
         //call computer to calculate intermidiate result
 
-
         Waypoint w1, w2;
-        double distance = 0,  up_elevasion = 0,  time_diff = 0, average_speed = 0;
-        Result final_result = new Result();
+        double distance = 0.0,  up_elevasion = 0.0, average_speed = 0.0;
+        double time_diff = 0;
 
-        for(int i = 0; i < working.size()-1; i++){
-            w1 = working.get(i);
-            w2 = working.get(i + 1);
+
+        for(int i = 1; i < working.size(); i++){
+            w1 = working.get(i-1);
+            w2 = working.get(i);
             distance += computer.distance(w1, w2);
-            up_elevasion += computer.up_elevasion(w1, w2);
+            up_elevasion += computer.up_elevation(w1, w2);
             time_diff += computer.time_diff(w1, w2);
-            average_speed += computer.average_speed(w1, w2);
         }
-        final_result.setTotal_ascent(up_elevasion);
-        final_result.setTotal_distance(distance);
-        final_result.setTotal_time(time_diff);
-        final_result.setAvg_speed(average_speed);
+
+        Result final_result = new Result(time_diff, distance, up_elevasion);
 
         return final_result;
+
     }
 
 
     public static void main(String args[]) throws InterruptedException {
-        new Worker().start();
-        new Worker().start();
-        new Worker().start();
-        new Worker().start();
-        new Worker().start();
+        new Worker(args[0], Integer.parseInt(args[1])).start();
+        new Worker(args[0], Integer.parseInt(args[1])).start();
+        new Worker(args[0], Integer.parseInt(args[1])).start();
+        new Worker(args[0], Integer.parseInt(args[1])).start();
+        new Worker(args[0], Integer.parseInt(args[1])).start();
     }
 
 

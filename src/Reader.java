@@ -6,7 +6,7 @@ public class Reader{
 
     public User readgpx(String filename) throws IOException{
         ArrayList<Waypoint> waypoints = new ArrayList<>();
-        FileReader gpx = new FileReader(filename);
+        StringReader gpx = new StringReader(filename);
         BufferedReader gpx_handler = new BufferedReader(gpx);
         String online;
         online=gpx_handler.readLine();
@@ -17,14 +17,11 @@ public class Reader{
         while(online!=null){
             if(online.trim().contains("<gpx")){
                 user = online.substring(online.indexOf("creator=")+9, online.indexOf(">")-1);
-                //user=online.substring(online.indexOf("createor="+9,online.lastIndexOf(">")));
             }
             if(online.trim().contains("<wpt")){
                 wpt=new Waypoint();
                 latitude=Double.parseDouble(online.trim().substring(online.indexOf("lat")+5, online.indexOf("lon")-4));
                 longitude=Double.parseDouble(online.trim().substring(online.indexOf("lon")+5, online.lastIndexOf(">")-3));
-                //latitude=Long.parseLong(online.trim().substring(online.indexOf("lat")+5, online.indexOf("lon")-4));
-                //longitude=Long.parseLong(online.trim().substring(online.indexOf("lon")+5, online.lastIndexOf(">")-3));
             }
             else if(online.trim().contains("<ele")){
                 elevation=Double.parseDouble(online.substring(online.indexOf(">")+1, online.indexOf("</")));

@@ -9,10 +9,10 @@ public class Master{
     static int client_counter = 1;
     static int worker_counter = 1;
     static int rr_counter = 1;
+    static int total_gpx_files = 0;
     //Socket that receives the requests
     private static ServerSocket serversocket = null;
-    private static ServerSocket workerserversocket = null;
-    //Socket that is sued to handle the connection
+    //Socket that is used to handle the connection
     private static Socket socketprovider;
 
     static ArrayList<User> users = new ArrayList<>();
@@ -42,8 +42,8 @@ public class Master{
 
                 /* Accept the connection */
                 socketprovider = serversocket.accept();
-                System.out.println("we in");
 
+                // Creates handler thread tp handle the request
                 RequestHandler req_handler = new RequestHandler(socketprovider);
                 req_handler.start();
 
