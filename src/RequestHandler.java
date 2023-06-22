@@ -27,20 +27,18 @@ public class RequestHandler extends Thread{
                 String word = in.readUTF();
                 // To see what the request wants
 
-                if (word.equals("client")) {
+                if (word.equals(CLIENT)) {
 
 
                     //if (process.equals("upload")) {
                         String file = in.readUTF();
                         Reader gpx_reader = new Reader();
                         User cur_user = gpx_reader.readgpx(file);
-                        System.out.println(cur_user.getId());
 
                         String client;
                         int total_master_files;
                         synchronized (Master.client_lock) {
                             client = "Client" + Master.client_counter;
-                            //Master.client_counter++;
                             Master.incrementClientCounter();
                             Master.total_gpx_files++;
                             total_master_files = Master.total_gpx_files;

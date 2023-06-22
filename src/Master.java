@@ -12,8 +12,7 @@ public class Master{
     static int total_gpx_files = 0;
     //Socket that receives the requests
     private static ServerSocket serversocket = null;
-    private static ServerSocket workerserversocket = null;
-    //Socket that is sued to handle the connection
+    //Socket that is used to handle the connection
     private static Socket socketprovider;
 
     static ArrayList<User> users = new ArrayList<>();

@@ -14,7 +14,6 @@ public class Client extends Thread{
 
     }
 
-    public String getFile(){ return this.file; }
 
     public void run(){
         ObjectOutputStream out= null ;
@@ -105,7 +104,7 @@ public class Client extends Thread{
 
 
     public static void main(String [] args) {
-        new Client("C:\\Users\\giorg\\OneDrive - aueb.gr\\Έγγραφα\\aueb\\Distributed_Systems\\gpxs\\route2.gpx").start();
+        new Client("C:\\Users\\giorg\\OneDrive - aueb.gr\\Έγγραφα\\aueb\\Distributed_Systems\\gpxs\\route3.gpx").start();
         //new Client("user1", true);
     }
 

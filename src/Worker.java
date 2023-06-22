@@ -26,8 +26,7 @@ public class Worker extends Thread{
 
 
             /* Create socket for contacting the server on port 4320*/
-            String host = "192.168.56.1";
-            requestSocket = new Socket(host, 4320);
+            requestSocket = new Socket(server_ip, server_port);
 
             out = new ObjectOutputStream(requestSocket.getOutputStream());
             in = new ObjectInputStream(requestSocket.getInputStream());

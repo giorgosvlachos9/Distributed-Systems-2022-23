@@ -53,10 +53,10 @@ public class User implements Serializable {
     // Method that creates a String variable that has all the values of a result
     private String resultStringBuilder(Result res, boolean avg_speed_check){
         StringBuilder sb = new StringBuilder();
-        sb.append("Total Time: " + Math.round(res.getTotal_time() * 100) / 100.0 + " minutes\n");
-        sb.append("Total Distance: " + Math.round(res.getTotal_distance() * 100) / 100.0 + " kms\n");
-        sb.append("Total Elevation: " + Math.round(res.getTotal_ascent() * 100) / 100.0 + " meters\n");
-        if (avg_speed_check) sb.append("Average Speed: " + Math.round(res.getAvg_speed() * 100) / 100.0 + " meters/minute\n");
+        sb.append("Total Time (in Minutes) : " + Math.round(res.getTotal_time() * 100) / 100.0 + "\n");
+        sb.append("Total Distance (in Kilometers) : " + Math.round(res.getTotal_distance() * 100) / 100.0 + "\n");
+        sb.append("Total Elevation (in Meters) : " + Math.round(res.getTotal_ascent() * 100) / 100.0 + "\n");
+        if (avg_speed_check) sb.append("Average Speed (in Meters / minute) : " + Math.round(res.getAvg_speed() * 100) / 100.0 + "\n");
 
         return sb.toString();
 
